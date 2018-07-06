@@ -16,17 +16,17 @@
 #define EXIT_OK		1
 
 enum DIAS {LUN=0, MAR, MIER, JUE, VIE, SAB, DOM};
-
 typedef struct vuelo{
-	char OACI[4];
+	char OACI[OACI_MAX];
 	unsigned int cantMov;
 	struct vuelo * sig; 
 }tVuelo;
 
 typedef struct{
 	tVuelo * despegues;
+	unsigned int totalDespegues;
 	tVuelo * aterrizajes;
-	unsigned int cantMov;
+	unsigned int totalAterrizajes;
 }tMovimiento;
 
 typedef struct{
