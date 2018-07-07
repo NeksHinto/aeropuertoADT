@@ -16,21 +16,22 @@
 #define EXIT_OK		1
 
 enum DIAS {LUN=0, MAR, MIER, JUE, VIE, SAB, DOM};
+
 typedef struct vuelo{
-	char OACI[OACI_MAX];
-	unsigned int cantMov;
+	char OACI[OACI_MAX]; //Código OACI del aeropuerto secundario (con el que se relaciona el principal, importado de eana1401_1802.csv)
+	unsigned int aterrizajes; //Origen: aeropuerto principal
+	unsigned int despegues; //Origen: aeropuerto secundario
 	struct vuelo * sig; 
 }tVuelo;
 
 typedef struct{
-	tVuelo * despegues;
 	unsigned int totalDespegues;
-	tVuelo * aterrizajes;
 	unsigned int totalAterrizajes;
+	tVuelo * vuelos;
 }tMovimiento;
 
 typedef struct{
-	char OACI[OACI_MAX];
+	char OACI[OACI_MAX]; //Código OACI del aeropuerto principal (LOCAL, importado de aerop_detalle.csv)
 	char codigoLocal[LOCAL_MAX];
 	char IATA[IATA_MAX];
 	char * descripcion;
