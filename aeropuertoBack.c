@@ -106,9 +106,21 @@ tLista agregaAeropuertoRec(tLista listaAeropuerto, const char OACI[], const char
 	return listaAeropuerto;
 }
 
-int movimientosAeropuerto()
+int movAeropuerto(tLista lista){
+	FILE fd;
+	fd=fopen("movs_aeropuerto.csv", "w");
+	tLista l=lista;
+	while(l!=NULL){
+		fprintf(fd, "%s;%s;%s;%d\n", "l->aeropuerto->OACI","l->aeropuerto->codigoLocal", "l->aeropuerto->descripcion", l->aeropuerto->totalDespegues + l->aeropuerto->totalAterrizajes);
+		l=l->sig;
+	}
+	fclose(fd);
+	return1;
+}
+
+int movimientosAeropuerto(aeropuertoADT aeropuerto)
 {
-	FILE * movsAerop = fopen("movs_aeropuerto.csv", "wt");
+	return movAeropuerto(aeropuerto->aeropuertosLocales);
 }
 
 
