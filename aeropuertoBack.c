@@ -11,8 +11,6 @@
 #define	IATA_MAX	3
 #define	DIAS_MAX	7
 
-#define	BLOQUE		12
-
 #define EXIT_OK		1
 
 enum DIAS {LUN=0, MAR, MIER, JUE, VIE, SAB, DOM};
