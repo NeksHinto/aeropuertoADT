@@ -116,7 +116,7 @@ int movAeropuerto(tLista lista){
 		l=l->sig;
 	}
 	fclose(fd);
-	return1;
+	return 1;
 }
 
 int movimientosAeropuerto(aeropuertoADT aeropuerto)
