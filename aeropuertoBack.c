@@ -47,9 +47,9 @@ typedef struct nodo{
 typedef tNodo * tLista;
 
 struct aeropuertoCDT{
-	tLista listaAeropuerto;
-	unsigned int aeropuertosLocales;
-	unsigned long int dias[DIAS_MAX];
+	tLista aeropuertosLocales;
+	unsigned int cantAeropuertosLocales;
+	unsigned long int vuelosPorSemana[DIAS_MAX];
 };
 
 typedef aeropuertoCDT * aeropuertoADT;
