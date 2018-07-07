@@ -107,7 +107,7 @@ tLista agregaAeropuertoRec(tLista listaAeropuerto, const char OACI[], const char
 }
 
 int movAeropuerto(tLista lista){
-	FILE fd;
+	FILE *fd;
 	fd=fopen("movs_aeropuerto.csv", "w");
 	tLista l=lista;
 	while(l!=NULL){
