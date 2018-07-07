@@ -111,7 +111,8 @@ int movAeropuerto(tLista lista){
 	fd=fopen("movs_aeropuerto.csv", "w");
 	tLista l=lista;
 	while(l!=NULL){
-		fprintf(fd, "%s;%s;%s;%d\n", "l->aeropuerto->OACI","l->aeropuerto->codigoLocal", "l->aeropuerto->descripcion", l->aeropuerto->totalDespegues + l->aeropuerto->totalAterrizajes);
+		if((l->aeropuerto->movimiento->totalDespegues !=0) || (l->aeropuerto->movimiento->totalAterrizajes !=0)) //NO debe contener aeropuertos con cero movimientos en el año pedido
+			fprintf(fd, "%s;%s;%s;%d\n", "l->aeropuerto->OACI","l->aeropuerto->codigoLocal", "l->aeropuerto->descripcion", l->aeropuerto->totalDespegues + l->aeropuerto->totalAterrizajes);
 		l=l->sig;
 	}
 	fclose(fd);
