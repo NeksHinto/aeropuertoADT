@@ -49,7 +49,7 @@ typedef tNodo * tLista;
 struct aeropuertoCDT{
 	tLista aeropuertosLocales;
 	unsigned int cantAeropuertosLocales;
-	unsigned long int vuelosPorSemana[DIAS_MAX];
+	unsigned long int vuelosSemanal[DIAS_MAX];
 };
 
 typedef aeropuertoCDT * aeropuertoADT;
