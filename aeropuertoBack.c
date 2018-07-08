@@ -10,6 +10,7 @@
 #define	LOCAL_MAX	3
 #define	IATA_MAX	3
 #define	DIAS_MAX	7
+#define	INTER_MOV	2
 
 #define EXIT_OK		1
 
@@ -19,7 +20,6 @@ typedef struct vuelo{
 	char OACI[OACI_MAX]; //Código OACI del aeropuerto secundario (con el que se relaciona el principal, importado de eana1401_1802.csv)
 	unsigned int aterrizajes; //Origen: aeropuerto principal
 	unsigned int despegues; //Origen: aeropuerto secundario
-	//char * aeropuertoArgentino // verdadero o falso
 	struct vuelo * sig; 
 }tVuelo;
 
@@ -34,7 +34,7 @@ typedef struct{
 	char codigoLocal[LOCAL_MAX];
 	char IATA[IATA_MAX];
 	char * descripcion;
-	char * trafico;
+	char trafico[INTER_MOV];
 	tMovimiento movimientos;
 }tAeropuerto;
 
@@ -47,6 +47,7 @@ typedef tNodo * tLista;
 
 struct aeropuertoCDT{
 	tLista aeropuertosLocales;
+	tLista iterador; //Para recorrer el TAD
 	unsigned long int vuelosSemanal[DIAS_MAX];
 };
 
