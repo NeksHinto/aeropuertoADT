@@ -19,6 +19,7 @@ typedef struct vuelo{
 	char OACI[OACI_MAX]; //Código OACI del aeropuerto secundario (con el que se relaciona el principal, importado de eana1401_1802.csv)
 	unsigned int aterrizajes; //Origen: aeropuerto principal
 	unsigned int despegues; //Origen: aeropuerto secundario
+	//char * aeropuertoArgentino // verdadero o falso
 	struct vuelo * sig; 
 }tVuelo;
 
@@ -134,24 +135,26 @@ int movimientosAeropuerto(aeropuertoADT aeropuerto)
 
 
 int copiaMovimientosInternacionales(tLista listaDeAeropuertosLocales){
-	int aterrizajes, despegues; 
+	int at, desp; 
+	
+	tVuelo *vueloP;
+	               
 	Tlista l=listaDeAeropuertosLocales;
 	FILE * achivoP;//puntero que apunta a un archivo
-	fd=fopen("movs_internacional.csv", "w");//creamos un archivo "movs_in(...)" y recibe "w" que permite la escritura en el archivo
+	archivoP=fopen("movs_internacional.csv", "w");//creamos un archivo "movs_in(...)" y recibe "w" que permite la escritura en el archivo
 	
-	//Recorremos la lista 
+	//Recorremos la lista de aeropuertos locales/principal
 	while(l!=NULL){
-		//////////////////////////////////////////////////////////////////////////////
-		//Que son los MOVIMIENTOS INTERNACIONALESS???
-		//////////////////////////////////////////////////////////////////////////////
-
-		//Verificamos que el aeropuerto sea internacional 
+		//Verificamos que el aeropuerto principal/local sea internacional
 		if(l->aeropuerto->trafico==1){
-
-			//Verificamos que hubo movimiento del aeropuerto en ese año
-			if((despegues= l->aeropuerto->movimientos->totalDespegues !=0) || (aterrizajes=l->aeropuerto->movimientos->totalAterrizajes != 0)){
-				fprintf(archivoP, "%s;%s;%d;%d;%d\n", l->aeropuerto->OACI, l->aeropuerto->IATA, despegues, aterrizajes, despegues+aterrizajes);
-			}
+			do{
+				//Verificamos que el aeropuerto DESTINO no sea local/Argentino 
+				if((vueloP=l->aeropuerto->movimientos->vuelos)->aeropuertoArgentino==0){
+					fprintf(archivoP, "%s;%s;%d;%d;%d\n", l->aeropuerto->OACI, l->aeropuerto->IATA, desp=vueloP->aterrizajes, at=vueloP->despegues, desp+at);
+		
+				vueloP=vueloP->sig;
+				}
+			}while(vueloP!=NULL);
 		}
 
 		l=l->sig; 
