@@ -107,20 +107,26 @@ tLista agregaAeropuertoRec(tLista listaAeropuerto, const char OACI[], const char
 	return listaAeropuerto;
 }
 
+///////////////////////////////////////////////
+/*QUERY 1*/
+///////////////////////////////////////////////
+///////////////////////////////////////////////
+int movimientosAeropuerto(aeropuertoADT aeropuerto)
+{
+	return copiaMovimientosAeropuerto(aeropuerto->aeropuertosLocales);
+}
+
 int copiaMovimientosAeropuerto(tLista listaDeAeropuertosLocales){
 	FILE * archivoP; //puntero que apunta a un archivo 
-	fd=fopen("movs_aeropuerto.csv", "w"); //crea un archivo nombre "movs_aeropuerto(...)" y recibe un string "w" que permite que se escriba en el archivo creado
-	tLista l=listaDeAeropuertosLocales;
-
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	archivoP=fopen("movs_aeropuerto.csv", "w"); //crea un archivo nombre "movs_aeropuerto(...)" y recibe un string "w" que permite que se escriba en el archivo creado
+	tLista l= listaDeAeropuertosLocales;
+	
 	/*Recorremos toda la lista de aeropuertos locales y unicamente si el aeropuerto tuvo movimiento copiamos
-	los datos al archivo creado*////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	los datos al archivo creado*/
 
 	while(l!=NULL){
 		if((l->aeropuerto->movimiento->totalDespegues !=0) || (l->aeropuerto->movimiento->totalAterrizajes !=0)) //NO debe contener aeropuertos con cero movimientos en el año pedido
-			fprintf(fd, "%s;%s;%s;%d\n", "l->aeropuerto->OACI","l->aeropuerto->codigoLocal", "l->aeropuerto->descripcion", l->aeropuerto->totalDespegues + l->aeropuerto->totalAterrizajes);
+			fprintf(fd, "%s;%s;%s;%d\n", l->aeropuerto->OACI,l->aeropuerto->codigoLocal, l->aeropuerto->descripcion,( l->aeropuerto->movimientos->totalDespegues  +  l->aeropuerto->movimientos->totalAterrizajes));
 		l=l->sig;
 	}
 
@@ -128,16 +134,24 @@ int copiaMovimientosAeropuerto(tLista listaDeAeropuertosLocales){
 	return 1;
 }
 
-int movimientosAeropuerto(aeropuertoADT aeropuerto)
-{
-	return copiaMovimientosAeropuerto(aeropuerto->aeropuertosLocales);
-}
 
+
+
+
+///////////////////////////////////////////////
+/*QUERY 2*/
+///////////////////////////////////////////////
+///////////////////////////////////////////////
+int movimientosInternacionales(aeropuertoADT aero)
+{
+	return copiaMovimientosInternacionales(aero->aeropuertosLocales);
+}
 
 int copiaMovimientosInternacionales(tLista listaDeAeropuertosLocales){
 	int at, desp; 
 	
-	tVuelo *vueloP;
+	//creamos un puntero a un struct vuelo para: acceder a los datos de cada vuelo de la lista de vuelos de un aeropuerto internacional
+	tVuelo *vueloP; 
 	               
 	Tlista l=listaDeAeropuertosLocales;
 	FILE * achivoP;//puntero que apunta a un archivo
@@ -164,15 +178,16 @@ int copiaMovimientosInternacionales(tLista listaDeAeropuertosLocales){
 }
 
 
-int movimientosInternacionales(aeropuertoADT aero)
-{
-	return copiaMovimientosInternacionales(aero->aeropuertosLocales);
-}
-
+///////////////////////////////////////////////
+/*QUERY 3*/
+///////////////////////////////////////////////
+///////////////////////////////////////////////
 int vuelosPorDía()
 {
+	//Creamos el archivo "semanal.csv" 
 	FILE *archivoP;
 	archivoP=fopen("semanal.csv", "w");
+	
 		fprintf(archivoP, "LUNES: %d\n", aero->vuelosSemanal[LUN]);
 		fprintf(archivoP, "MARTES: %d\n", aero->vuelosSemanal[MAR]);
 		fprintf(archivoP, "MIERCOLES: %d\n", aero->vuelosSemanal[MIER]);
@@ -181,27 +196,40 @@ int vuelosPorDía()
 		fprintf(archivoP, "SABADO: %d\n", aero->vuelosSemanal[SAB]);
 		fprintf(archivoP, "DOMINGO: %d\n", aero->vuelosSemanal[DOM]);
 
-	fclose(archivoP);
+	fclose(archivoP);//cerramos el stream
 	return 1;
+}
+
+
+///////////////////////////////////////////////
+/*QUERY 4*/
+///////////////////////////////////////////////
+///////////////////////////////////////////////
+int detalleVuelos(aeropuertoADT aero)
+{
+	return copiaDetallesVuelo(aero->aeropuertosLocales);
 }
 
 int copiaDetallesVuelo(tLista listaDeAeropuertosLocales){
 	tLista l= listaDeAeropuertosLocales;
 	FILE *archivoP; //puntero a un archivo;
-	archivoP=fopen("aerop_detalle.csv", "w");
+	archivoP=fopen("aerop_detalle.csv", "w"); //creamos archivo
+	
 	struct vuelo *vueloP; 
 
 	while(l!=NULL){
-		fprintf(archivoP, "%s;%s;%d;%d\n", l->aeropuerto->OACI, (vueloP= l->aeropuerto->movimiento->vuelo)->OACI, vueloP->aterrizajes; vueloP->despegues);
-	l=l->sig;
+		if(vueloP= l->aeropuerto->movimiento->vuelo !=NULL){
+			do{
+				fprintf(archivoP, "%s;%s;%d;%d\n", l->aeropuerto->OACI, vueloP->OACI, vueloP->aterrizajes; vueloP->despegues);
+				vueloP=vueloP->sig;
+			}while(vueloP!=NULL);
+		}	
+	  l=l->sig;
 	}
 
 	fclose(archivoP);
 	return 1;
 }
 
-int detalleVuelos(aeropuertoADT aero)
-{
-	return copiaDetallesVuelo(aero->aeropuertosLocales);
-}
+
 
