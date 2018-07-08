@@ -106,7 +106,7 @@ tLista agregaAeropuertoRec(tLista listaAeropuerto, const char OACI[], const char
 	return listaAeropuerto;
 }
 
-int movAeropuerto(tLista listaDeAeropuertosLocales){
+int copiaMovimientosAeropuerto(tLista listaDeAeropuertosLocales){
 	FILE * archivoP; //puntero que apunta a un archivo 
 	fd=fopen("movs_aeropuerto.csv", "w"); //crea un archivo nombre "movs_aeropuerto(...)" y recibe un string "w" que permite que se escriba en el archivo creado
 	tLista l=listaDeAeropuertosLocales;
@@ -129,11 +129,11 @@ int movAeropuerto(tLista listaDeAeropuertosLocales){
 
 int movimientosAeropuerto(aeropuertoADT aeropuerto)
 {
-	return movAeropuerto(aeropuerto->aeropuertosLocales);
+	return copiaMovimientosAeropuerto(aeropuerto->aeropuertosLocales);
 }
 
 
-int movInternacional(tLista listaDeAeropuertosLocales){
+int copiaMovimientosInternacionales(tLista listaDeAeropuertosLocales){
 	int aterrizajes, despegues; 
 	Tlista l=listaDeAeropuertosLocales;
 	FILE * achivoP;//puntero que apunta a un archivo
@@ -163,7 +163,7 @@ int movInternacional(tLista listaDeAeropuertosLocales){
 
 int movimientosInternacionales(aeropuertoADT aero)
 {
-	return movInternacional(aero->aeropuertosLocales);
+	return copiaMovimientosInternacionales(aero->aeropuertosLocales);
 }
 
 int vuelosPorDía()
