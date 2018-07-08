@@ -168,8 +168,18 @@ int movimientosInternacionales(aeropuertoADT aero)
 
 int vuelosPorDía()
 {
-	FILE * vuelos = fopen("semanal.csv", "wt");
+	FILE *archivoP;
+	archivoP=fopen("semanal.csv", "w");
+		fprintf(archivoP, "LUNES: %d\n", aero->vuelosSemanal[LUN]);
+		fprintf(archivoP, "MARTES: %d\n", aero->vuelosSemanal[MAR]);
+		fprintf(archivoP, "MIERCOLES: %d\n", aero->vuelosSemanal[MIER]);
+		fprintf(archivoP, "JUEVES: %d\n", aero->vuelosSemanal[JUE]);
+		fprintf(archivoP, "VIERNES: %d\n", aero->vuelosSemanal[VIE]);
+		fprintf(archivoP, "SABADO: %d\n", aero->vuelosSemanal[SAB]);
+		fprintf(archivoP, "DOMINGO: %d\n", aero->vuelosSemanal[DOM]);
 
+	fclose(archivoP);
+	return 1;
 }
 
 int copiaDetallesVuelo(tLista listaDeAeropuertosLocales){
