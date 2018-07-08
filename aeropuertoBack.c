@@ -229,16 +229,13 @@ tVuelo sigMovimiento(tLista aeropuerto){
 /*QUERY 1*/
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
-int movimientosAeropuerto(aeropuertoADT a){
-	return copiaMovimientosAeropuerto(a->aeropuerto);
+int movimientosAeropuerto(aeropuertoADT a, FILE * archivoP){
+	return copiaMovimientosAeropuerto(a->aeropuerto, archivoP);
 }
 
-int copiaMovimientosAeropuerto(tLista aeropuertos){
-	FILE * archivoP; //puntero que apunta a un archivo 
-	archivoP = fopen("movs_aeropuerto.csv", "w"); //crea un archivo nombre "movs_aeropuerto(...)" y recibe un string "w" que permite que se escriba en el archivo creado
-	
-	tLista l = aeropuertos;
-	
+static
+int copiaMovimientosAeropuerto(tLista aeropuertos, FILE * archivoP){	
+	tLista l = aeropuertos;	
 	/*Recorremos toda la lista de aeropuertos locales y unicamente si el aeropuerto tuvo movimiento copiamos
 	los datos al archivo creado*/
 	while(l!=NULL){
@@ -255,20 +252,16 @@ int copiaMovimientosAeropuerto(tLista aeropuertos){
 /*QUERY 2*/
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
-int movimientosInternacionales(aeropuertoADT a){
-	return copiaMovimientosInternacionales(a->aeropuerto);
+int movimientosInternacionales(aeropuertoADT a, FILE * archivoP){
+	return copiaMovimientosInternacionales(a->aeropuerto, archivoP);
 }
 
-int copiaMovimientosInternacionales(tLista aeropuertos){
-	FILE * achivoP;//puntero que apunta a un archivo
-	archivoP = fopen("movs_internacional.csv", "w");//creamos un archivo "movs_in(...)" y recibe "w" que permite la escritura en el archivo
-	
-	int at, desp; 
-	
+static
+int copiaMovimientosInternacionales(tLista aeropuertos, FILE * archivoP){
+	int at, desp;	
 	//creamos un puntero a un struct vuelo para: acceder a los datos de cada vuelo de la lista de vuelos de un aeropuerto internacional
 	tVuelo * vueloP; 
-	tLista l = aeropuertos;
-	
+	tLista l = aeropuertos;	
 	//Recorremos la lista de aeropuertos locales/principal
 	while(l!=NULL){
 		//Verificamos que el aeropuerto principal/local sea internacional
@@ -294,18 +287,14 @@ int copiaMovimientosInternacionales(tLista aeropuertos){
 /*QUERY 3*/
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
-int vuelosPorDía(){
-	FILE * archivoP;
-	archivoP = fopen("semanal.csv", "w");
-	
-	fprintf(archivoP, "LUNES: %d\n", aero->vuelosSemanal[LUN]);
-	fprintf(archivoP, "MARTES: %d\n", aero->vuelosSemanal[MAR]);
-	fprintf(archivoP, "MIERCOLES: %d\n", aero->vuelosSemanal[MIER]);
-	fprintf(archivoP, "JUEVES: %d\n", aero->vuelosSemanal[JUE]);
-	fprintf(archivoP, "VIERNES: %d\n", aero->vuelosSemanal[VIE]);
-	fprintf(archivoP, "SABADO: %d\n", aero->vuelosSemanal[SAB]);
-	fprintf(archivoP, "DOMINGO: %d\n", aero->vuelosSemanal[DOM]);
-
+int vuelosPorDía(aeropuertoADT * a, FILE * archivoP){
+	fprintf(archivoP, "LUNES: %d\n", a->vuelosSemanal[LUN]);
+	fprintf(archivoP, "MARTES: %d\n", a->vuelosSemanal[MAR]);
+	fprintf(archivoP, "MIERCOLES: %d\n", a->vuelosSemanal[MIER]);
+	fprintf(archivoP, "JUEVES: %d\n", a->vuelosSemanal[JUE]);
+	fprintf(archivoP, "VIERNES: %d\n", a->vuelosSemanal[VIE]);
+	fprintf(archivoP, "SABADO: %d\n", a->vuelosSemanal[SAB]);
+	fprintf(archivoP, "DOMINGO: %d\n", a->vuelosSemanal[DOM]);
 	fclose(archivoP);//cerramos el stream
 	return EXIT_OK;
 }
@@ -315,14 +304,12 @@ int vuelosPorDía(){
 /*QUERY 4*/
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
-int detalleVuelos(aeropuertoADT a){
-	return copiaDetallesVuelo(a->aeropuerto);
+int detalleVuelos(aeropuertoADT a, FILE * archivoP){
+	return copiaDetallesVuelo(a->aeropuerto, archivoP);
 }
 
-int copiaDetallesVuelo(tLista aeropuertos){
-	FILE *archivoP; //puntero a un archivo;
-	archivoP = fopen("aerop_detalle.csv", "w"); //creamos archivo
-	
+static
+int copiaDetallesVuelo(tLista aeropuertos, FILE * archivoP){	
 	tLista l = aeropuertos;
 	tVuelo * vueloP;
 
@@ -337,5 +324,25 @@ int copiaDetallesVuelo(tLista aeropuertos){
 	}
 
 	fclose(archivoP);
+	return EXIT_OK;
+}
+
+//FUNCIÓN PRINCIPAL QUE JUNTA TODAS LAS QUERIES
+int crearArchivos(aeropuertoADT a, char * pathQuery1, char * pathQuery2, char * pathQuery3, char * pathQuery4){
+	//Creamos los archivos
+	FILE * archQ1;
+	archQ1 = fopen("movs_aeropuerto.csv", "w"); //crea un archivo nombre "movs_aeropuerto(...)" y recibe un string "w" que permite que se escriba en el archivo creado
+	FILE * archQ2;
+	archQ2 = fopen("movs_internacional.csv", "w");
+	FILE * archQ3;
+	archQ3 = fopen("semanal.csv", "w");
+	FILE * archQ4;
+	archQ4 = fopen("aerop_detalle.csv", "w");
+	//Copiamos los datos del TAD
+	movimientosAeropuerto(aeropuertoADT a, archQ1);
+	movimientosInternacionales(aeropuertoADT a, archQ2);
+	vuelosPorDía(aeropuertoADT a, archQ3);
+	detalleVuelos(aeropuertoADT a, archQ4);
+
 	return EXIT_OK;
 }
