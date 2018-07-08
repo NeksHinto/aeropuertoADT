@@ -10,7 +10,7 @@
 #define	LOCAL_MAX	3
 #define	IATA_MAX	3
 #define	DIAS_MAX	7
-#define	INTER_MOV	2
+#define	MOV_INTER	2
 
 #define EXIT_OK		1
 
@@ -27,6 +27,7 @@ typedef struct{
 	unsigned int totalDespegues;
 	unsigned int totalAterrizajes;
 	tVuelo * vuelos;
+	tVuelo * iter; //Para recorrer la lista de vuelos
 }tMovimiento;
 
 typedef struct{
@@ -34,7 +35,7 @@ typedef struct{
 	char codigoLocal[LOCAL_MAX];
 	char IATA[IATA_MAX];
 	char * descripcion;
-	char trafico[INTER_MOV];
+	char trafico[MOV_INTER];
 	tMovimiento movimientos;
 }tAeropuerto;
 
@@ -46,8 +47,8 @@ typedef struct nodo{
 typedef tNodo * tLista;
 
 struct aeropuertoCDT{
-	tLista aeropuertosLocales;
-	tLista iterador; //Para recorrer el TAD
+	tLista primero;
+	tLista iter; //Para recorrer la lista de aeropuertos
 	unsigned long int vuelosSemanal[DIAS_MAX];
 };
 
@@ -61,19 +62,19 @@ aeropuertoADT nuevoAeropuerto()
 /*Agrega un nuevo aeropuerto a la lista. 
 **Si ya existía el aeropuerto, se reemplazan los datos (se considera una actualización)
 **Si lo agrega correctamente retorna 1, caso contrario retorna 0.*/
-int agregaAeropuerto(aeropuertoADT aeropuerto, const char OACI[], const char codigoLocal[], const char IATA[], const char * descripcion, const char * trafico)
+int agregaAeropuerto(aeropuertoADT a, const char OACI[], const char codigoLocal[], const char IATA[], const char * descripcion, const char * trafico)
 {
 	int exito = 0;
-	aeropuerto->listaAeropuerto=agregaAeropuertoRec(aeropuerto->listaAeropuerto, OACI, codigoLocal, IATA, descripcion, trafico, &exito);
+	a->primero=agregaAeropuertoRec(a->primero, OACI, codigoLocal, IATA, descripcion, trafico, &exito);
 
 	return exito;
 }
 
 static 
-tLista agregaAeropuertoRec(tLista listaAeropuerto, const char OACI[], const char codigoLocal[], const char IATA[], const char * descripcion, const char * trafico, int * exito)
+tLista agregaAeropuertoRec(tLista primero, const char OACI[], const char codigoLocal[], const char IATA[], const char * descripcion, const char * trafico, int * exito)
 {
 	int c;
-	if(listaAeropuerto==NULL || (c=strcmp(OACI, listaAeropuerto->OACI)) < 0)
+	if(primero==NULL || (c=strcmp(OACI, primero->OACI)) < 0)
 	{
 		tLista new = malloc(sizeof(*new));
 		if(new!=NULL)
@@ -96,16 +97,94 @@ tLista agregaAeropuertoRec(tLista listaAeropuerto, const char OACI[], const char
 	}
 	if(c==0) //Actualiza
 	{
-		listaAeropuerto->codigoLocal=codigoLocal;
-		listaAeropuerto->IATA=IATA;
-		listaAeropuerto->descripcion=descripcion;
-		listaAeropuerto->trafico=trafico;
+		primero->codigoLocal=codigoLocal;
+		primero->IATA=IATA;
+		primero->descripcion=descripcion;
+		primero->trafico=trafico;
 
 		*exito=1;
 	}
-	listaAeropuerto->sig=agregaAeropuertoRec(listaAeropuerto->sig, OACI, codigoLocal, IATA, descripcion, trafico);
+	primero->sig=agregaAeropuertoRec(primero->sig, OACI, codigoLocal, IATA, descripcion, trafico);
 
-	return listaAeropuerto;
+	return primero;
+}
+
+void freeAeropuerto(aeropuertoADT a)
+{
+	freeAeropuertoRec(a->primero);
+	for(int i=0; i<DIAS_MAX; i++)
+	{
+		if(a->vuelosSemanal[i]!=NULL)
+			free(a->vuelosSemanal[i]);
+	}
+	free(a->vuelosSemanal);
+	free(a);
+
+	return;
+}
+
+static
+void freeAeropuertoRec(tLista primero)
+{
+	if(primero==NULL)
+		return;
+	freeVuelosRec(primero->sig);
+	free(primero->trafico);
+	free(primero);
+	return;
+}
+
+static
+void freeVuelosRec(tVuelo * vuelos)
+{
+	if(vuelos==NULL)
+		return;
+	freeVuelosRec(vuelos->sig);
+	free(vuelos);
+	return;
+}
+
+void recorrerAeropuertos(aeropuertoADT a)
+{
+	a->iter = a->primero;
+}
+
+void recorrerMovsAeropuerto(tLista aeropuerto)
+{
+	aeropuerto->iter = aeropuerto->primero; 
+}
+
+int haySigAeropuerto(aeropuertoADT a)
+{
+	return a->iter!=NULL;
+}
+
+int haySigMovimiento(tLista aeropuerto)
+{	
+	return aeropuerto->iter!=NULL;
+}
+
+tLista sigAeropuerto(aeropuertoADT a)
+{
+	tMovimiento auxVuelos={0,0,NULL,NULL};
+	tLista aux = {0,0,0,NULL,NULL, auxVuelos};
+	if(haySigAeropuerto(a))
+	{
+		aux = a->iter;
+		a->iter = a->iter->sig;
+	}
+	return aux;
+}
+
+tVuelo sigMovimiento(tLista aeropuerto)
+{
+	tVuelo aux = {0,0,0};
+	if(haySigMovimiento(aeropuerto))
+	{
+		aux = aeropuerto->iter;
+		aeropuerto->iter = aeropuerto->iter->sig;
+	}
+	return aux;
 }
 
 ///////////////////////////////////////////////
