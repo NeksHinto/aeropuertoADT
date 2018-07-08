@@ -172,9 +172,23 @@ int vuelosPorDía()
 
 }
 
-int detalleVuelos()
-{
-	FILE * detalleLocales = fopen("aerop_detalle.csv", "wt");
+int copiaDetallesVuelo(tLista listaDeAeropuertosLocales){
+	tLista l= listaDeAeropuertosLocales;
+	FILE *archivoP; //puntero a un archivo;
+	archivoP=fopen("aerop_detalle.csv", "w");
+	struct vuelo *vueloP; 
+
+	while(l!=NULL){
+		fprintf(archivoP, "%s;%s;%d;%d\n", l->aeropuerto->OACI, (vueloP= l->aeropuerto->movimiento->vuelo)->OACI, vueloP->aterrizajes; vueloP->despegues);
+	l=l->sig;
+	}
+
+	fclose(archivoP);
+	return 1;
 }
 
+int detalleVuelos(aeropuertoADT aero)
+{
+	return copiaDetallesVuelo(aero->aeropuertosLocales);
+}
 
