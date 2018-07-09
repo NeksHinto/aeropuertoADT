@@ -6,10 +6,10 @@
 #include <errno.h>
 #include "airportBack.h"
 
-#define	OACI_MAX	4
-#define	LOCAL_MAX	3
-#define	IATA_MAX	3
-#define	DIAS_MAX	7
+#define	OACI_MAX	5
+#define	LOCAL_MAX	4
+#define	IATA_MAX	4
+#define	DIAS_MAX	8
 
 #define EXIT_OK		1
 
@@ -54,9 +54,16 @@ struct aeropuertoCDT{
 
 typedef aeropuertoCDT * aeropuertoADT;
 
-aeropuertoADT nuevoAeropuerto()
+aeropuertoADT nuevoRegistroAero()
 {
-	return calloc(1, sizeof(struct aeropuertoCDT));
+	aeropuertoADT a = malloc(sizeof(struct aeropuertoCDT));
+	if(a!=NULL){
+		a->primero=NULL;
+		a->iter=NULL;
+		for(int i=0; a->vuelosSemanal[i]!=0; i++)
+			a->vuelosSemanal[i]=0;
+	}
+	return a;
 }
 
 /*Agrega un nuevo aeropuerto a la lista. 
@@ -128,7 +135,7 @@ tVuelo agregarMovimientoRec(tVuelo primero, char OACI[], char clasificacion, int
 		tVuelo new = malloc(sizeof(*new));
 		if(new!=NULL){
 			new->OACI=OACI;
-			new->clasificacion=clasificacion;
+			new->clasificacion=(clasificacion=="Internacional"?1:0); //Si es 0 es porque es un vuelo de cabotaje
 			clasificarMovimiento(primero, aterrizaje);
 		}
 		*exito=1;
@@ -223,6 +230,12 @@ tVuelo sigMovimiento(tLista aeropuerto){
 		aeropuerto->iter = aeropuerto->iter->sig;
 	}
 	return aux;
+}
+
+/*Devuelve la posición en el vector que coincide con el día de la semana correspondiente
+**a la fecha pasada como parámetro*/
+int fechaADia(char fecha[]){
+	//GOOGLEAR
 }
 
 ///////////////////////////////////////////////
@@ -345,4 +358,15 @@ int crearArchivos(aeropuertoADT a, char * pathQuery1, char * pathQuery2, char * 
 	detalleVuelos(aeropuertoADT a, archQ4);
 
 	return EXIT_OK;
+}
+
+static
+void validaArchivo(FILE * archivo)
+{
+	if(archivo==NULL)
+	{
+		fprintf(stderr, "No se pudo abrir el archivo.\n");
+		return EXIT_FAILURE;
+	}
+	return;
 }
