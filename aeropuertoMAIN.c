@@ -9,8 +9,12 @@
 
 #define RANGO(c)		(strcmp(c, "2014")==0 || strcmp(c, "2015")==0 || strcmp(c, "2016")==0 || strcmp(c, "2017")==0 || strcmp(c, "2018")==0)	
 #define VALIDA(c)		(isalpha(c) && c!=NULL)
-#define	RECORRE_TOKENS		(strtok(NULL, DELIM))	
+#define	RECORRE_TOKENS		(strtok(NULL, DELIM))
+#define	BOOLEAN_TOKEN(s)	((RECORRE_TOKENS==(s))?1:0)
 #define	FECHA_MAX		9
+#define	SALTO1			1
+#define	SALTO2			14
+#define	SALTO3			2			
 
 int main(int argc, char *argv[])
 {
@@ -32,17 +36,17 @@ int main(int argc, char *argv[])
 		
 		//Guardamos el resto de los tokens en las variables con la macro RECORRE_TOKENS
 		char OACI[OACI_MAX] = RECORRE_TOKENS;
-		char IATA[IATA_MAX] = RECORRE_TOKENS;//MAL, ME TENGO QUE SALTEAR COLUMNAS(Lo veo mañana)!!!!!!!!!!!!!!!!!!!!!!
+		char IATA[IATA_MAX] = RECORRE_TOKENS;
+		//Salteamos columnas innecesarias
+		moverPtrNCols(linea, SALTO1);
 		char * descripcion = RECORRE_TOKENS;
-		char * trafico = ((RECORRE_TOKENS=="Internacional")?1:0); //HACER MACRO(SE REPITE MAS ABAJO)
+		moverPtrNCols(linea, SALTO2);
+		char * trafico = BOOLEAN_TOKEN("Internacional");
 		
 		//Guardamos los datos del aeropuerto en el TAD
 		int flag = agregarAeropuerto(OACI, codigoLocal, IATA, descripcion, trafico);
-			if(!flag){
-				fprintf(stderr, "No se pudo agregar el aeropuerto.\n");
-				return EXIT_FAILURE;
-			}
-
+		validaFlag(flag, ERR_AERO);
+		//Pasamos a leer la línea siguiente
 		linea = leerLinea(linea, "./aeropuertos_detalle.csv");
 		}while(linea!=EOF);
 
@@ -51,25 +55,22 @@ int main(int argc, char *argv[])
 		do{		//MODULARIZAR ESTE DO-WHILE
 		//Guardamos el primer segmento hasta ; (Primer columna->FECHA)
 		char fecha[FECHA_MAX] = strtok(linea, DELIM);
-		int dia = fechaADia(fecha);//(BACK)
-			//HACER UN SWITCH (FCION AUX) CON LOS DIAS DE LA SEMANA (BACK)
+		int dia = fechaADia(fecha);
+		validaFlag(dia, ERR_FECHA);
+		//Incrementamos el movimiento en la posición del día correspondiente
+		flag = registrarMovDia(dia);
+		validaFlag(flag, ERR_DIA);
 		//Guardamos el resto de los tokens en las variables con la macro RECORRE_TOKENS
-		char OACI[OACI_MAX] = RECORRE_TOKENS; //Chequear que esto funque
-		char clasificacion = ((RECORRE_TOKENS=="Internacional")?1:0);
-		int aterrODespeg = ((RECORRE_TOKENS=="Aterrizaje")?1:0);
-		/*Ver cómo hacer esto
-		unsigned int despegues;
-		unsigned int aterrizajes;*/
-		
-		//Guardamos los datos del aeropuerto en el TAD
-		//clasificacion -> Si es de cabotaje o inter
-		//aterrODespeg -> Flag para incrementar aterrizajes o despegues
-		int flag = agregarMovimiento(registo->primero->vuelos, OACI, clasificacion, aterrizaje);
-		if(!flag){
-			fprintf(stderr, "No se pudo agregar el movimiento.\n");
-			return EXIT_FAILURE;
-		}
+		moverPtrNCols(linea, SALTO3);
+		char OACI[OACI_MAX] = RECORRE_TOKENS;
+		char clasificacion = BOOLEAN_TOKEN("Internacional");
+		int aterrODespeg = BOOLEAN_TOKEN("Aterrizaje");
 
+		//Guardamos los datos del Movimiento en el TAD
+		flag = agregarMovimiento(regsitro->primero, OACI, clasificacion, aterrODespeg);
+		validaFlag(dia, ERR_MOV);
+		
+		//Pasamos a leer la línea siguiente
 		linea = leerLinea(linea, "./aeropuertos_detalle.csv");
 		}while(linea!=EOF);
 	}
