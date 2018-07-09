@@ -7,14 +7,14 @@
 #include "airportFront.h"
 #include "airportBack.h"
 
-#define RANGO(c)			(strcmp(c, "2014")==0 || strcmp(c, "2015")==0 || strcmp(c, "2016")==0 || strcmp(c, "2017")==0 || strcmp(c, "2018")==0)	
-#define VALIDA(c)			(isalpha(c) && c!=NULL)
+#define RANGO(c)		(strcmp(c, "2014")==0 || strcmp(c, "2015")==0 || strcmp(c, "2016")==0 || strcmp(c, "2017")==0 || strcmp(c, "2018")==0)	
+#define VALIDA(c)		(isalpha(c) && c!=NULL)
 #define	RECORRE_TOKENS		(strtok(NULL, DELIM))
 #define	BOOLEAN_TOKEN(s)	((RECORRE_TOKENS==(s))?1:0)
-#define	FECHA_MAX			9
-#define	SALTO1				1
-#define	SALTO2				14
-#define	SALTO3				2			
+#define	FECHA_MAX		9
+#define	SALTO1			1
+#define	SALTO2			14
+#define	SALTO3			2			
 
 int main(int argc, char *argv[])
 {
