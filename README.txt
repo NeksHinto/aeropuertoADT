@@ -28,6 +28,7 @@ Lista de listas (Falta completar)
 
 2. Estilo
 Front vs Back (Falta completar)
+Funcion moverStreamPtr: mejor estilo que arranque desde el principio o validar que este mas adelante que n y bai?
 
 3. Posibles problemas e inquietudes
 
