@@ -1,19 +1,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <math.h>
+#include <time.h>
 #include <errno.h>
 #include "airportBack.h"
 
-#define	OACI_MAX	5
-#define	LOCAL_MAX	4
-#define	IATA_MAX	4
-#define	DIAS_MAX	8
+#define	OACI_MAX		5
+#define	LOCAL_MAX		4
+#define	IATA_MAX		4
+#define	DIAS_MAX		8
+#define	DELIM_FECHA 	"/"
+#define	RECORRE_FECHA	(strtok(NULL, DELIM_TOKEN))
 
 #define EXIT_OK		1
+#define	EXIT_ERR	0
 
 enum DIAS {LUN=0, MAR, MIER, JUE, VIE, SAB, DOM};
+enum ERRORES {ERR_AERO=1, ERR_MOV, ERR_FECHA, ERR_DIA, ERR_OACI}
 
 typedef struct vuelo{
 	char OACI[OACI_MAX]; //Código OACI del aeropuerto secundario (con el que se relaciona el principal, importado de eana1401_1802.csv)
@@ -94,20 +97,10 @@ tLista agregarAeropuertoRec(tLista primero, char OACI[], char codigoLocal[], cha
 				new->movimientos->totalAterrizajes=0;
 				new->movimientos->vuelos=calloc(sizeof(*vuelos));
 			}
-
-			*exito=1;
-
-			return new;
-		}
-		else{
-			perror("Error");
 		}
 	}
-	if(c==0){ //Actualiza
-		primero->codigoLocal=codigoLocal;
-		primero->IATA=IATA;
-		primero->descripcion=descripcion;
-		primero->trafico=trafico;
+	if(c==0){ //Si se ingresa el mismo código OACI local -> incremento movimientos
+		//Ver como pasar despegue/aterrizaje
 
 		*exito=1;
 
@@ -121,20 +114,29 @@ tLista agregarAeropuertoRec(tLista primero, char OACI[], char codigoLocal[], cha
 /*Agrega un movimiento al aeropuerto local pasado como parámetro.
 **El flag se define en el main, leyendo el archivo:
 **Si se trata de un aterrizaje, aterrizaje = 1, sino aterrizaje = 0.*/
-int agregarMovimiento(tLista aeropuerto, char OACI[], char clasificacion, char flag){
+int agregarMovimiento(aeropuertoADT a, char OACILocal[], char OACISec[], char clasificacion, char flag){
 	int exito=0;
-	aeropuerto->vuelos=agregarMovimientoRec(aeropuerto->vuelos, OACI, clasificacion, &exito, char aterrizaje);
+	recorrerAeropuertos(a);
+	while(strcmp(OACILocal, a->iter->OACI)!=0 && haySigAeropuerto(a)){
+		a->iter = sigAeropuerto(a);
+	}
+	if(flag)
+		a->iter->totalAterrizajes++;
+	else
+		a->iter->totalDespegues++;
+
+	aux->vuelos=agregarMovimientoRec(a->iter->vuelos, OACISec, clasificacion, &exito, char aterrizaje);
 
 	return exito;
 }
 
 static
-tVuelo agregarMovimientoRec(tVuelo primero, char OACI[], char clasificacion, int * exito, char aterrizaje){
+tVuelo agregarMovimientoRec(tVuelo primero, char OACISec[], char clasificacion, int * exito, char aterrizaje){
 	int c;
-	if(primero=NULL || (c=strcmp(OACI, primero->OACI)) < 0 ){
+	if(primero=NULL || (c=strcmp(OACISec, primero->OACI)) < 0 ){
 		tVuelo new = malloc(sizeof(*new));
 		if(new!=NULL){
-			new->OACI=OACI;
+			new->OACI=OACISec;
 			new->clasificacion=(clasificacion=="Internacional"?1:0); //Si es 0 es porque es un vuelo de cabotaje
 			clasificarMovimiento(primero, aterrizaje);
 		}
@@ -142,9 +144,8 @@ tVuelo agregarMovimientoRec(tVuelo primero, char OACI[], char clasificacion, int
 
 		return new;
 	}
-	if(c==0){ //Actualiza
+	if(c==0){
 		clasificarMovimiento(primero, aterrizaje);
-
 		*exito=1;
 
 		return primero;
@@ -157,9 +158,9 @@ tVuelo agregarMovimientoRec(tVuelo primero, char OACI[], char clasificacion, int
 static
 void clasificarMovimiento(tVuelo primero, char aterrizaje){
 	if(aterrizaje)
-		new->aterrizaje++;
+		primero->aterrizaje++;
 	else
-		new->despegue++;
+		primero->despegue++;
 
 	return;
 }
@@ -232,11 +233,32 @@ tVuelo * sigMovimiento(tLista aeropuerto){
 
 /*Devuelve la posición en el vector que coincide con el día de la semana correspondiente
 **a la fecha pasada como parámetro*/
-int fechaADia(char fecha[]){
-	//GOOGLEAR
+int fechaADia(char * fecha, int * fueraDeRango, int anio){
+	int d = atoi(strtok(fecha, DELIM_FECHA));
+	int m = atoi(RECORRE_FECHA);
+	int a = atoi(RECORRE_TOKENS);
+
+	if(a!=anio)
+		*fueraDeRango=1;
+
+	int dia = (d+=m<3?a--:a-2,23*m/9+d+4+4/a-a/100+a/400)%7;
+
+	return dia-1;
+}//CHECKED
+
+int registrarMovDia(aeropuertoADT a, int dia){
+	switch(dia){
+		case LUN: a->vuelosSemanal[LUN-1]++;break;
+		case MAR: a->vuelosSemanal[MAR-1]++;break;
+		case MIER: a->vuelosSemanal[MIER-1]++;break;
+		case JUE: a->vuelosSemanal[JUE-1]++;break;
+		case VIE: a->vuelosSemanal[VIE-1]++;break;
+		case SAB: a->vuelosSemanal[SAB-1]++;break;
+		case DOM: a->vuelosSemanal[DOM-1]++;break;
+		default: return EXIT_ERR;
+	}
+	return EXIT_OK;
 }
-
-
 
 ///////////////////////////////////////////////
 /*QUERY 1*/
@@ -357,15 +379,42 @@ int crearArchivos(aeropuertoADT a, char * pathQuery1, char * pathQuery2, char * 
 	return EXIT_OK;
 }
 
+/*Reinicia el puntero al inicio de la línea y lo mueve hasta el token (columna) n*/
+char * moverPtrColN(char * s, int n)
+{
+	int i=0;
+	char * aux = strtok(s, DELIM_TOKEN);
+	while(i<n){
+		aux = RECORRE_TOKENS;
+		i++;
+	}
+	return aux;
+}//CHECKED
+
+/*Valida si no es N/A*/
+char * esLineaValida(char * linea){
+	char * auxClasif = moverPtrColN(linea, CLASIFICACION);
+	char * auxOrig = moverPtrColN(linea, OACI_ORIG);
+	char * auxDest = moverPtrColN(linea, OACI_DEST);
+	while(esNA(auxClasif) && esNA(auxOrig) && esNA(auxDest)){
+		char c;
+		SALTEA_LINEA(c, auxClasif);
+		auxClasif = moverPtrColN(auxClasif, CLASIFICACION);
+		auxOrig = moverPtrColN(auxClasif, OACI_ORIG);
+		auxDest = moverPtrColN(auxClasif, OACI_DEST);
+	}
+	return auxClasif;
+}
+
 void validaArchivo(FILE * archivo)
 {
 	if(archivo==NULL)
 	{
 		fprintf(stderr, "No se pudo abrir el archivo.\n");
-		return EXIT_FAILURE;
+		return EXIT_ERR;
 	}
 	return;
-}
+}//CHECKED
 
 static
 char * strError(int tipoError)
@@ -374,8 +423,9 @@ char * strError(int tipoError)
 	{
 		case ERR_AERO:	return "No se pudo agregar el aeropuerto.\n"; break;
 		case ERR_MOV: 	return "No se pudo agregar el movimiento.\n"; break;
-		case ERR_FECHA: return "No se pudo decifrar el día de la fecha pasada como parámetro\n"; break;
+		case ERR_FECHA: return "No se pudo registrar el día de la fecha pasada como parámetro.\n"; break;
 		case ERR_DIA: 	return "No se pudo registrar el movimiento en el día correspondiente.\n"; break;
+		case ERR_OACI:	return "No se encontró el OACI.\n"; break;
 	}
 }
 
@@ -384,7 +434,7 @@ void validaFlag(int flag, int tipoError)
 	if(!flag){
 		char * strError=strError(strError, tipoError);
 		fprintf(stderr, "%s\n", strError);
-		return EXIT_FAILURE;
+		return EXIT_ERR;
 	}
 	return;
 }
