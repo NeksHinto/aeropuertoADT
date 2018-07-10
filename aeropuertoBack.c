@@ -70,7 +70,7 @@ aeropuertoADT nuevoRegistroAero()
 }
 
 /*Agrega un nuevo aeropuerto a la lista. 
-**Si ya existía el aeropuerto, se reemplazan los datos (se considera una actualización)
+**Si ya existía el aeropuerto, no hace nada.
 **Si lo agrega correctamente retorna 1, caso contrario retorna 0.*/
 int agregarAeropuerto(aeropuertoADT a, char OACI[], char codigoLocal[], char IATA[], char * descripcion, char trafico){
 	int exito = 0;
@@ -112,6 +112,8 @@ tLista agregarAeropuertoRec(tLista primero, char OACI[], char codigoLocal[], cha
 }
 
 /*Agrega un movimiento al aeropuerto local pasado como parámetro.
+**Pensado para utilizar post-agregar un aeropuerto.
+**Incrementa totalAterrizajes o totalDespegues.
 **El flag se define en el main, leyendo el archivo:
 **Si se trata de un aterrizaje, aterrizaje = 1, sino aterrizaje = 0.*/
 int agregarMovimiento(aeropuertoADT a, char OACILocal[], char OACISec[], char clasificacion, char flag){
