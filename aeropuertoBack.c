@@ -239,7 +239,7 @@ int movimientosAeropuerto(aeropuertoADT a, FILE *archivoP){
 
     	/*Asumo que solo hay aeropuertos con movimientos en la lista, por lo tanto no verifico que tenga 
     	movimientos o no, los guardo directamente hasta completar el final de la lista de aeropuertos*/
-    	fprintf(archivoP, "%s;%s;%s;%d\n", aeroLocal->OACI, aeroLocal->codigoLocal, aeroLocal->descripcion, (aeroLocal->movimientos->totalDespegues+aeroLocal->movimientos->totalAterrizajes));
+    	fprintf(archivoP, "%s;%s;%s;%d\n", aeroLocal.OACI, aeroLocal.codigoLocal, aeroLocal.descripcion, (aeroLocal.movimientos.totalDespegues+aeroLocal.movimientos.totalAterrizajes));
     }while(haySigAeropuerto(a));
     fclose(archivoP);
     return EXIT_OK;	
@@ -271,7 +271,7 @@ int movimientosInternacionales( aeropuertoADT a, FILE * archivoP){
 
      			//verificamos que el aeropuerto DESTINO sea internacional
      			if(vueloP->clasificacion==1){
-     				fprintf(archivoP,"%s;%s;%d;%d;%d\n", aeroP->OACI, aeroP->IATA, desp=vueloP->aterrizaje, at=vueloP->despegues,desp+at );
+     				fprintf(archivoP,"%s;%s;%d;%d;%d\n", aeroP.OACI, aeroP.IATA, desp=vueloP.aterrizaje, at=vueloP.despegues,desp+at );
      			}
      		}while(haySigMovimiento(a->iter));
 		}
@@ -286,13 +286,13 @@ int movimientosInternacionales( aeropuertoADT a, FILE * archivoP){
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
 int vuelosPorDía(aeropuertoADT * a, FILE * archivoP){
-	fprintf(archivoP, "LUNES: %d\n", a->vuelosSemanal[LUN]);
-	fprintf(archivoP, "MARTES: %d\n", a->vuelosSemanal[MAR]);
-	fprintf(archivoP, "MIERCOLES: %d\n", a->vuelosSemanal[MIER]);
-	fprintf(archivoP, "JUEVES: %d\n", a->vuelosSemanal[JUE]);
-	fprintf(archivoP, "VIERNES: %d\n", a->vuelosSemanal[VIE]);
-	fprintf(archivoP, "SABADO: %d\n", a->vuelosSemanal[SAB]);
-	fprintf(archivoP, "DOMINGO: %d\n", a->vuelosSemanal[DOM]);
+	fprintf(archivoP, "LUNES: %d\n", a.vuelosSemanal[LUN]);
+	fprintf(archivoP, "MARTES: %d\n", a.vuelosSemanal[MAR]);
+	fprintf(archivoP, "MIERCOLES: %d\n", a.vuelosSemanal[MIER]);
+	fprintf(archivoP, "JUEVES: %d\n", a.vuelosSemanal[JUE]);
+	fprintf(archivoP, "VIERNES: %d\n", a.vuelosSemanal[VIE]);
+	fprintf(archivoP, "SABADO: %d\n", a.vuelosSemanal[SAB]);
+	fprintf(archivoP, "DOMINGO: %d\n", a.vuelosSemanal[DOM]);
 	fclose(archivoP);//cerramos el stream
 	return EXIT_OK;
 }
@@ -314,7 +314,7 @@ int detallesVuelo(aeropuertoADT a, FILE *archivoP){
 		/*todos los aeropuertos tienen movimiento, no hace falta verificar*/
 		do{
 			vueloP=sigMovimiento(a->iter);
-			fprintf(archivoP, "%s;%s;%d;%d\n", aeroP->OACI, vueloP->OACI, vueloP->aterrizajes, vueloP->despegues);
+			fprintf(archivoP, "%s;%s;%d;%d\n", aeroP.OACI, vueloP.OACI, vueloP.aterrizajes, vueloP.despegues);
 		}while(haySigMovimiento(a->iter));
 	}while(haySigAeropuerto(a->iter));
 	fclose(archivoP);
