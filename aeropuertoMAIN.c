@@ -56,6 +56,8 @@ int main(int argc, char *argv[])
 				OACIAnon = RECORRE_TOKENS;
 				OACILocal = RECORRE_TOKENS; //DestinoOACI es el local
 			}//Sino, me da igual porque ambos son locales
+			//Si se trata de un aeropuerto desconocido, lo reemplazo por "####"
+			esDesconocido(OACIAnon);
 			
 			//COPIAMOS LOS DATOS DEL ARCHIVO aeropuertos_detalle.csv
 			char codigoLocal1[LOCAL_MAX];
