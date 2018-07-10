@@ -262,6 +262,17 @@ int registrarMovDia(aeropuertoADT a, int dia){
 	return EXIT_OK;
 }
 
+/*Si se trata de un aeropuerto desconocido, lo pisa con "####"*/
+void esDesconocido(char OACI[5]){
+	int i;
+	for(i=2; OACI[i]!=0 && isalpha(OACI[i]); i++)
+		;
+	if(i!=4)
+		strcpy(OACI, "####");
+	printf("%d\n", i);
+	return;
+}//CHECKED
+
 ///////////////////////////////////////////////
 /*QUERY 1*/
 ///////////////////////////////////////////////
