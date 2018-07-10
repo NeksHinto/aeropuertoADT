@@ -213,22 +213,20 @@ int haySigMovimiento(tLista aeropuerto){
 	return aeropuerto->iter!=NULL;
 }
 
-tLista sigAeropuerto(aeropuertoADT a){
-	tMovimiento auxVuelos={0,0,NULL,NULL};
-	tLista aux = {0,0,0,NULL,NULL, auxVuelos};
-	if(haySigAeropuerto(a)){
-		aux = a->iter;
-		a->iter = a->iter->sig;
-	}
+tAeropuerto* sigAeropuerto(aeropuertoADT a){
+	
+	tAeropuerto* aux;
+	aux= a->iter->aeropuerto;
+	a->iter = a->iter->sig->aeropuerto;
+	
 	return aux;
 }
 
-tVuelo sigMovimiento(tLista aeropuerto){
-	tVuelo aux = {0,0,0};
-	if(haySigMovimiento(aeropuerto)){
-		aux = aeropuerto->iter;
-		aeropuerto->iter = aeropuerto->iter->sig;
-	}
+tVuelo * sigMovimiento(tLista aeropuerto){
+	tVuelo * aux;
+	aux = aeropuerto->iter;
+	aeropuerto->iter = aeropuerto->iter->sig;
+	
 	return aux;
 }
 
@@ -244,24 +242,21 @@ int fechaADia(char fecha[]){
 /*QUERY 1*/
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
-int movimientosAeropuerto(aeropuertoADT a, FILE * archivoP){
-	return copiaMovimientosAeropuerto(a->aeropuerto, archivoP);
+int movimientosAeropuerto(aeropuertoADT a, FILE *archivoP){
+    tAeropuerto* aeroLocal; //este puntero es para que reciba la direccion que retorna la funcion next (del aeropuerto local siguiente de la lista)
+    recorrerAeropuertos(a);//El iterador apunta al primer nodo de la lista
+
+    do{
+    	aeroLocal=sigAeropuerto(a);//retorna la direccion del aeropuerto que apunta el puntero iterador y hace con que el iterador apunte al proximo aeropuerto
+
+    	/*Asumo que solo hay aeropuertos con movimientos en la lista, por lo tanto no verifico que tenga 
+    	movimientos o no, los guardo directamente hasta completar el final de la lista de aeropuertos*/
+    	fprintf(archivoP, "%s;%s;%s;%d\n", aeroLocal->OACI, aeroLocal->codigoLocal, aeroLocal->descripcion, (aeroLocal->movimientos->totalDespegues+aeroLocal->movimientos->totalAterrizajes));
+    }while(haySigAeropuerto(a));
+    fclose(archivoP);
+    return EXIT_OK;	
 }
 
-static
-int copiaMovimientosAeropuerto(tLista aeropuertos, FILE * archivoP){	
-	tLista l = aeropuertos;	
-	/*Recorremos toda la lista de aeropuertos locales y unicamente si el aeropuerto tuvo movimiento copiamos
-	los datos al archivo creado*/
-	while(l!=NULL){
-		if((l->aeropuerto->movimiento->totalDespegues!=0) || (l->aeropuerto->movimiento->totalAterrizajes!=0)) //NO debe contener aeropuertos con cero movimientos en el año pedido
-			fprintf(fd, "%s;%s;%s;%d\n", l->aeropuerto->OACI,l->aeropuerto->codigoLocal, l->aeropuerto->descripcion,(l->aeropuerto->movimientos->totalDespegues  +  l->aeropuerto->movimientos->totalAterrizajes));
-		l=l->sig;
-	}
-
-	fclose(archivoP); //cierra el stream 
-	return EXIT_OK;
-}
 
 ///////////////////////////////////////////////
 /*QUERY 2*/
