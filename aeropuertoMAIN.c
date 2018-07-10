@@ -9,12 +9,11 @@
 
 #define RANGO(c)		(strcmp(c, "2014")==0 || strcmp(c, "2015")==0 || strcmp(c, "2016")==0 || strcmp(c, "2017")==0 || strcmp(c, "2018")==0)	
 #define VALIDA(c)		(isalpha(c) && c!=NULL)
-#define	RECORRE_TOKENS		(strtok(NULL, DELIM))
+#define	RECORRE_TOKENS		(strtok(NULL, DELIM_TOKEN))
 #define	BOOLEAN_TOKEN(s)	((RECORRE_TOKENS==(s))?1:0)
+#define	esNA(s)			(strcmp(s, "N/A")==0)
 #define	FECHA_MAX		9
-#define	SALTO1			1
-#define	SALTO2			14
-#define	SALTO3			2			
+
 
 int main(int argc, char *argv[])
 {
@@ -24,60 +23,75 @@ int main(int argc, char *argv[])
 		aeropuertoADT registro = nuevoRegistroAero();
 		if(registro==NULL){
 			fprintf(stderr, "Error: No se pudo crear el nuevo registro.\n");
-			exit(EXIT_FAILURE);
+			return EXIT_ERR;
 		}
-
-		//PASAMOS LOS DATOS DEL ARCHIVO aeropuertos_detalle.csv
-		char * linea = leerLinea(linea, "./aeropuertos_detalle.csv");
-		
-		do{		//MODULARIZAR ESTE DO-WHILE
-		//Guardamos el primer segmento hasta ; (Primer columna)
-		char codigoLocal[LOCAL_MAX] = strtok(linea, DELIM);
-		
-		//Guardamos el resto de los tokens en las variables con la macro RECORRE_TOKENS
-		char OACI[OACI_MAX] = RECORRE_TOKENS;
-		char IATA[IATA_MAX] = RECORRE_TOKENS;
-		//Salteamos columnas innecesarias
-		moverPtrNCols(linea, SALTO1);
-		char * descripcion = RECORRE_TOKENS;
-		moverPtrNCols(linea, SALTO2);
-		char * trafico = BOOLEAN_TOKEN("Internacional");
-		
-		//Guardamos los datos del aeropuerto en el TAD
-		int flag = agregarAeropuerto(OACI, codigoLocal, IATA, descripcion, trafico);
-		validaFlag(flag, ERR_AERO);
-		//Pasamos a leer la línea siguiente
-		linea = leerLinea(linea, "./aeropuertos_detalle.csv");
-		}while(linea!=EOF);
-
-		//PASAMOS LOS DATOS DEL ARCHIVO DE LOS VUELOS
-		linea = leerLinea(linea, "./eana1401-1802.csv");
-		do{		//MODULARIZAR ESTE DO-WHILE
+		char lineaVuelos[CHAR_MAX] = {0};
+		lineaVuelos = leerLinea(lineaVuelos, "./eana1401-1802.csv");
+		int fueraDeAnio=0;
+		do{
+		//Buscamos línea donde ni la clasificación, ni destino y origen OACI's no sean N/A
+		lineaVuelos = esLineaValida(lineaVuelos);
 		//Guardamos el primer segmento hasta ; (Primer columna->FECHA)
-		char fecha[FECHA_MAX] = strtok(linea, DELIM);
-		int dia = fechaADia(fecha);
+		lineaVuelos = moverPtrColN(lineaVuelos, FECHA);
+		char fecha[FECHA_MAX] = strtok(lineaVuelos, DELIM_TOKEN);
+		int dia = fechaADia(fecha, &fueraDeAnio, argv[1]);
 		validaFlag(dia, ERR_FECHA);
-		//Incrementamos el movimiento en la posición del día correspondiente
-		flag = registrarMovDia(dia);
-		validaFlag(flag, ERR_DIA);
-		//Guardamos el resto de los tokens en las variables con la macro RECORRE_TOKENS
-		moverPtrNCols(linea, SALTO3);
-		char OACI[OACI_MAX] = RECORRE_TOKENS;
-		char clasificacion = BOOLEAN_TOKEN("Internacional");
-		int aterrODespeg = BOOLEAN_TOKEN("Aterrizaje");
+		if(!fueraDeAnio){
+			//Incrementamos el movimiento en la posición del día correspondiente
+			flag = registrarMovDia(registro, dia);
+			validaFlag(flag, ERR_DIA);
+			//Guardamos el resto de los tokens en las variables con la macro RECORRE_TOKENS
+			lineaVuelos = moverPtrColN(lineaVuelos, CLASIFICACION);
+			char clasificacion = BOOLEAN_TOKEN("Internacional");
+			lineaVuelos = RECORRE_TOKENS;
+			int aterrizaje = BOOLEAN_TOKEN("Aterrizaje");
+			//Para guardar el OACI necesito ver cuál es local y cuál internacional
+			char OACILocal[OACI_MAX];
+			char OACIAnon[OACI_MAX];
+			if(!aterrizaje){
+				OACILocal = RECORRE_TOKENS; //OrigenOACI es el local
+				OACIAnon = RECORRE_TOKENS;
+			}
+			else{
+				OACIAnon = RECORRE_TOKENS;
+				OACILocal = RECORRE_TOKENS; //DestinoOACI es el local
+			}//Sino, me da igual porque ambos son locales
+			
+			//COPIAMOS LOS DATOS DEL ARCHIVO aeropuertos_detalle.csv
+			char codigoLocal1[LOCAL_MAX];
+			char IATA1[IATA_MAX];
+			char * descripcion1;
+			char trafico1;
+			datosAeropuerto(OACILocal, codigoLocal1, IATA1, descripcion1, &trafico1);
+			//Guardamos los datos del aeropuerto local en el TAD
+			int flag = agregarAeropuerto(OACILocal, codigoLocal1, IATA1, descripcion1, trafico1);
+			validaFlag(flag, ERR_AERO);
+			//Guardamos los datos del Movimiento local-anonimo en el TAD
+			flag = agregarMovimiento(regsitro, OACILocal, OACIAnon, clasificacion, aterrizaje);
+			validaFlag(flag, ERR_MOV);
 
-		//Guardamos los datos del Movimiento en el TAD
-		flag = agregarMovimiento(regsitro->primero, OACI, clasificacion, aterrODespeg);
-		validaFlag(dia, ERR_MOV);
-		
-		//Pasamos a leer la línea siguiente
-		linea = leerLinea(linea, "./aeropuertos_detalle.csv");
-		}while(linea!=EOF);
+			if(clasificacion){ //Si el vuelo es de CABOTAJE -> agregamos OACIAnon como otro local
+				char codigoLocal2[LOCAL_MAX];
+				char IATA2[IATA_MAX];
+				char * descripcion2;
+				char trafico2;
+				datosAeropuerto(OACIAnon, codigoLocal2, IATA2, descripcion2, &trafico2);
+				int flag = agregarAeropuerto(OACIAnon, codigoLocal2, IATA2, descripcion2, trafico2);
+				validaFlag(flag, ERR_AERO);
+				flag = agregarMovimiento(regsitro, OACIAnon, OACILocal, clasificacion, aterrizaje);
+				validaFlag(flag, ERR_MOV);
+			}
+			//Pasamos a leer la línea siguiente
+			lineaVuelos = leerLinea(lineaVuelos, "./eana1401-1802.csv");
+		}
+		else
+			return 0; //Terminó de crear los archivos para el año pedido
+		}while(feof(lineaVuelos)==0);
+
+		return 0;
 	}
 	else{
 		fprintf(stderr, "Vuelva a ejecutar el programa ingresando un año entre el 2014 y 2018 inclusive.\n");
-		return EXIT_FAILURE;
+		return EXIT_ERR;
 	}
-
-	return 0;
 }
