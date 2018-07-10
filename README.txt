@@ -25,10 +25,10 @@ Diseño y comentarios
 --------------------
 1. Diseño
 Lista de listas (Falta completar)
+Recorre el archivo Vuelos tantas veces como aeropuertos locales haya en la lista principal. Super ineficiente.
 
 2. Estilo
 Front vs Back (Falta completar)
-Funcion moverStreamPtr: mejor estilo que arranque desde el principio o validar que este mas adelante que n y bai?
 
 3. Posibles problemas e inquietudes
 
