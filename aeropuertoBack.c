@@ -198,13 +198,14 @@ void freeVuelosRec(tVuelo * vuelos){
 	return;
 }
 
+
 void recorrerAeropuertos(aeropuertoADT a){
 	a->iter = a->primero;
 	return;
 }
 
 void recorrerMovsAeropuerto(tLista aeropuerto){
-	aeropuerto->iter = aeropuerto->primero; 
+	aeropuerto->movimientos->iter = aeropuerto->movimientos->vuelos;//cambiar nombre de vuelos que esta en la struct tmovimiento para primero(mas claro)  
 	return;
 }
 
@@ -213,22 +214,22 @@ int haySigAeropuerto(aeropuertoADT a){
 }
 
 int haySigMovimiento(tLista aeropuerto){	
-	return aeropuerto->iter!=NULL;
+	return aeropuerto->movimientos->iter!=NULL;
 }
 
 tAeropuerto* sigAeropuerto(aeropuertoADT a){
 	
 	tAeropuerto* aux;
 	aux= a->iter->aeropuerto;
-	a->iter = a->iter->sig->aeropuerto;
+	a->iter = a->iter->sig;
 	
 	return aux;
 }
 
 tVuelo * sigMovimiento(tLista aeropuerto){
 	tVuelo * aux;
-	aux = aeropuerto->iter;
-	aeropuerto->iter = aeropuerto->iter->sig;
+	aux = aeropuerto->movimientos->iter;
+	aeropuerto->movimientos->iter = aeropuerto->movimientos->iter->sig;
 	
 	return aux;
 }
@@ -297,32 +298,32 @@ int movimientosAeropuerto(aeropuertoADT a, FILE *archivoP){
 /*QUERY 2*/
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
-int movimientosInternacionales(aeropuertoADT a, FILE * archivoP){
-	return copiaMovimientosInternacionales(a->aeropuerto, archivoP);
-}
+int movimientosInternacionales( aeropuertoADT a, FILE * archivoP){
+	int at, desp;
+	recorrerAeropuertos(a);
+	tAeropuerto * aeroP;//puntero para recorrer la lista de aeropuertos principales/locales
+	tVuelo * vueloP;// puntero para recorrer la lista de movimientos de un determinado aeropuerto principal/local
 
-static
-int copiaMovimientosInternacionales(tLista aeropuertos, FILE * archivoP){
-	int at, desp;	
-	//creamos un puntero a un struct vuelo para: acceder a los datos de cada vuelo de la lista de vuelos de un aeropuerto internacional
-	tVuelo * vueloP; 
-	tLista l = aeropuertos;	
-	//Recorremos la lista de aeropuertos locales/principal
-	while(l!=NULL){
-		//Verificamos que el aeropuerto principal/local sea internacional
-		if(l->aeropuerto->trafico==1){
-			do{
-				//Verificamos que el aeropuerto DESTINO no sea local/Argentino 
-				if((vueloP=l->aeropuerto->movimientos->vuelos)->aeropuertoArgentino==0){
-					fprintf(archivoP, "%s;%s;%d;%d;%d\n", l->aeropuerto->OACI, l->aeropuerto->IATA, desp=vueloP->aterrizajes, at=vueloP->despegues, desp+at);
-		
-				vueloP=vueloP->sig;
-				}
-			}while(vueloP!=NULL);
+	do{
+		aeroP=sigAeropuerto(a);//aeroP apunta al aeropuerto que apunta el iterador y el iterador pasa a apuntar al siguiente aeropuerto principal/local de la lista de aeropuertos principales
+
+		//verificamos que el aeropuerto principal sea internacional
+		if(aeroP->trafico==1){
+			recorrerMovsAeropuerto(a->iter);
+			/*inicializamos el iterados de la lista de movimientos del aeropuerto aeroP internacional 
+			principal*/
+     		do{
+     			vueloP=sigMovimiento(a->iter);
+     			/*vueloP apunta al nodo de la lista de vuelos que apuntaba el iter de movs. y el iter apunta
+     			al proximo vuelo de la lista de movs.*/
+
+     			//verificamos que el aeropuerto DESTINO sea internacional
+     			if(vueloP->clasificacion==1){
+     				fprintf(archivoP,"%s;%s;%d;%d;%d\n", aeroP->OACI, aeroP->IATA, desp=vueloP->aterrizaje, at=vueloP->despegues,desp+at );
+     			}
+     		}while(haySigMovimiento(a->iter));
 		}
-
-		l=l->sig; 
-	}
+	}while(haySigAeropuerto(a));
 	fclose(archivoP);//cerramos el stream
 	return EXIT_OK;
 }
