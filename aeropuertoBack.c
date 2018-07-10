@@ -350,25 +350,21 @@ int vuelosPorDía(aeropuertoADT * a, FILE * archivoP){
 /*QUERY 4*/
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
-int detalleVuelos(aeropuertoADT a, FILE * archivoP){
-	return copiaDetallesVuelo(a->aeropuerto, archivoP);
-}
+int detallesVuelo(aeropuertoADT a, FILE *archivoP){
+	recorrerAeropuertos(a);
+	recorrerMovsAeropuerto(a->iter);
+	tAeropuerto *aeroP;//para recorrer lista de aeropuertos principales
+	tVuelo * vueloP;//para recorrer lista de movimientos de cada aeropuerto principal
 
-static
-int copiaDetallesVuelo(tLista aeropuertos, FILE * archivoP){	
-	tLista l = aeropuertos;
-	tVuelo * vueloP;
 
-	while(l!=NULL){
-		if(vueloP = l->aeropuerto->movimiento->vuelo !=NULL){
-			do{
-				fprintf(archivoP, "%s;%s;%d;%d\n", l->aeropuerto->OACI, vueloP->OACI, vueloP->aterrizajes; vueloP->despegues);
-				vueloP=vueloP->sig;
-			}while(vueloP!=NULL);
-		}	
-	l=l->sig;
-	}
-
+	do{
+		aeroP=sigAeropuerto(a);
+		/*todos los aeropuertos tienen movimiento, no hace falta verificar*/
+		do{
+			vueloP=sigMovimiento(a->iter);
+			fprintf(archivoP, "%s;%s;%d;%d\n", aeroP->OACI, vueloP->OACI, vueloP->aterrizajes, vueloP->despegues);
+		}while(haySigMovimiento(a->iter));
+	}while(haySigAeropuerto(a->iter));
 	fclose(archivoP);
 	return EXIT_OK;
 }
