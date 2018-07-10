@@ -1,72 +1,55 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <time.h>
-#include <errno.h>
-#include "airportBack.h"
+#include "aeropuertoBack.h"
 
-#define	OACI_MAX		5
-#define	LOCAL_MAX		4
-#define	IATA_MAX		4
-#define	DIAS_MAX		8
 #define	DELIM_FECHA 	"/"
-#define	RECORRE_FECHA	(strtok(NULL, DELIM_TOKEN))
+#define	RECORRE_FECHA	strtok(NULL, DELIM_TOKEN)
 
 #define EXIT_OK		1
 #define	EXIT_ERR	0
 
 enum DIAS {LUN=0, MAR, MIER, JUE, VIE, SAB, DOM};
-enum ERRORES {ERR_AERO=1, ERR_MOV, ERR_FECHA, ERR_DIA, ERR_OACI}
+enum ERRORES {ERR_AERO=1, ERR_MOV, ERR_FECHA, ERR_DIA, ERR_OACI};
 
-typedef struct vuelo{
-	char OACI[OACI_MAX]; //Código OACI del aeropuerto secundario (con el que se relaciona el principal, importado de eana1401_1802.csv)
-	char clasificacion; //Flag: 1 -> El OACI del nodo corresponde al de un aeropuerto INTERNACIONAL, 0 sino (NACIONAL)
-	unsigned int aterrizajes; //Origen: aeropuerto principal
-	unsigned int despegues; //Origen: aeropuerto secundario
-	struct vuelo * sig; 
-}tVuelo;
-
-typedef struct{
-	unsigned int totalDespegues;
-	unsigned int totalAterrizajes;
-	tVuelo * vuelos;
-	tVuelo * iter; //Para recorrer la lista de vuelos
-}tMovimiento;
-
-typedef struct{
-	char OACI[OACI_MAX]; //Código OACI del aeropuerto principal (LOCAL, importado de aerop_detalle.csv)
-	char codigoLocal[LOCAL_MAX];
-	char IATA[IATA_MAX];
-	char * descripcion;
-	char trafico; //Flag: 1->Aeropuerto Local tiene tráfico INTERNAC, 0 sino (Únicamente vuelos de cabotaje)
-	tMovimiento movimientos;
-}tAeropuerto;
-
-typedef struct nodo{
-	tAeropuerto aeropuerto;
-	struct nodo * sig;
-}tNodo;
-
-typedef tNodo * tLista;
-
-struct aeropuertoCDT{
-	tLista primero;
-	tLista iter; //Para recorrer la lista de aeropuertos
-	unsigned long int vuelosSemanal[DIAS_MAX];
-};
-
-typedef aeropuertoCDT * aeropuertoADT;
-
-aeropuertoADT nuevoRegistroAero()
-{
+/*Crea una estructura que dará soporte al almacenamiento de aeropuertos y sus respectivos movimientos.*/
+aeropuertoADT nuevoRegistroAero(){
 	aeropuertoADT a = malloc(sizeof(struct aeropuertoCDT));
 	if(a!=NULL){
 		a->primero=NULL;
 		a->iter=NULL;
-		for(int i=0; a->vuelosSemanal[i]!=0; i++)
+		for(int i=0; a->vuelosSemanal[i]!=0; i++){
 			a->vuelosSemanal[i]=0;
+		}
 	}
 	return a;
+}
+
+static 
+tLista agregarAeropuertoRec(tLista primero, char OACI[], char codigoLocal[], char IATA[], char * descripcion, char trafico, int * exito){
+	int c;
+	if(primero==NULL || (c=strcmp(OACI, primero->aeropuerto.OACI)) < 0){
+		tLista new = malloc(sizeof(*new));
+		if(new!=NULL){
+			strcpy(new->aeropuerto.OACI, OACI);
+			strcpy(new->aeropuerto.codigoLocal, codigoLocal);
+			strcpy(new->aeropuerto.IATA, IATA);
+			new->aeropuerto.descripcion = malloc(sizeof(strlen(descripcion)));
+			if(new->aeropuerto.descripcion!=NULL){
+				strcpy(new->aeropuerto.descripcion, descripcion);
+				new->aeropuerto.trafico=trafico;
+				//Inicializamos los movimientos del aeropuerto recién agregado
+				new->aeropuerto.movimientos.totalDespegues=0;
+				new->aeropuerto.movimientos.totalAterrizajes=0;
+				new->aeropuerto.movimientos.vuelos=calloc(1, sizeof(tVuelo));
+				
+				return new;
+			}
+		}
+	}
+	primero->sig=agregarAeropuertoRec(primero->sig, OACI, codigoLocal, IATA, descripcion, trafico, &exito);
+
+	return primero;
 }
 
 /*Agrega un nuevo aeropuerto a la lista. 
@@ -74,39 +57,43 @@ aeropuertoADT nuevoRegistroAero()
 **Si lo agrega correctamente retorna 1, caso contrario retorna 0.*/
 int agregarAeropuerto(aeropuertoADT a, char OACI[], char codigoLocal[], char IATA[], char * descripcion, char trafico){
 	int exito = 0;
-	a->primero=agregaAeropuertoRec(a->primero, OACI, codigoLocal, IATA, descripcion, trafico, &exito);
+	a->primero=agregarAeropuertoRec(a->primero, OACI, codigoLocal, IATA, descripcion, trafico, &exito);
 
 	return exito;
 }
 
-static 
-tLista agregarAeropuertoRec(tLista primero, char OACI[], char codigoLocal[], char IATA[], char * descripcion, char trafico, int * exito){
-	int c;
-	if(primero==NULL || (c=strcmp(OACI, primero->OACI)) < 0){
-		tLista new = malloc(sizeof(*new));
-		if(new!=NULL){
-			new->OACI=OACI;
-			new->codigoLocal=codigoLocal;
-			new->IATA=IATA;
-			new->descripcion=descripcion;
-			new->trafico=trafico;
-			//Inicializamos los movimientos del aeropuerto recién agregado
-			new->movimientos=malloc(sizeof(*movimientos));
-			if(new->movimientos!=NULL){
-				new->movimientos->totalDespegues=0;
-				new->movimientos->totalAterrizajes=0;
-				new->movimientos->vuelos=calloc(sizeof(*vuelos));
-			}
-		}
-	}
-	if(c==0){ //Si se ingresa el mismo código OACI local -> incremento movimientos
-		//Ver como pasar despegue/aterrizaje
+static
+void clasificarMovimiento(tVuelo primero, char aterrizaje){
+	if(aterrizaje)
+		primero.aterrizajes++;
+	else
+		primero.despegues++;
 
+	return;
+}
+
+static
+tVuelo agregarMovimientoRec(tVuelo primero, char OACISec[], char clasificacion, int * exito, char aterrizaje){
+	int c;
+	if(primero==NULL || (c=strcmp(OACISec, primero.OACI)) < 0 ){
+		void * aux = malloc(sizeof(tVuelo));
+		if(aux!=NULL){
+			tVuelo new = aux;
+			strcpy(new.OACI, OACISec);
+			new.clasificacion=(clasificacion=="Internacional"?1:0); //Si es 0 es porque es un vuelo de cabotaje
+			clasificarMovimiento(primero, aterrizaje);
+		}
+		*exito=1;
+
+		return new;
+	}
+	if(c==0){
+		clasificarMovimiento(primero, aterrizaje);
 		*exito=1;
 
 		return primero;
 	}
-	primero->sig=agregaAeropuertoRec(primero->sig, OACI, codigoLocal, IATA, descripcion, trafico);
+	primero->sig=agregarMovimientoRec(primero, aterrizaje);
 
 	return primero;
 }
@@ -127,44 +114,9 @@ int agregarMovimiento(aeropuertoADT a, char OACILocal[], char OACISec[], char cl
 	else
 		a->iter->totalDespegues++;
 
-	aux->vuelos=agregarMovimientoRec(a->iter->vuelos, OACISec, clasificacion, &exito, char aterrizaje);
+	a->iter->aeropuerto.movimientos->vuelos=agregarMovimientoRec(a->iter->aeropuerto.movimientos->vuelos, OACISec, clasificacion, &exito, char aterrizaje);
 
 	return exito;
-}
-
-static
-tVuelo agregarMovimientoRec(tVuelo primero, char OACISec[], char clasificacion, int * exito, char aterrizaje){
-	int c;
-	if(primero=NULL || (c=strcmp(OACISec, primero->OACI)) < 0 ){
-		tVuelo new = malloc(sizeof(*new));
-		if(new!=NULL){
-			new->OACI=OACISec;
-			new->clasificacion=(clasificacion=="Internacional"?1:0); //Si es 0 es porque es un vuelo de cabotaje
-			clasificarMovimiento(primero, aterrizaje);
-		}
-		*exito=1;
-
-		return new;
-	}
-	if(c==0){
-		clasificarMovimiento(primero, aterrizaje);
-		*exito=1;
-
-		return primero;
-	}
-	primero->sig=agregarMovimientoRec(primero, aterrizaje);
-
-	return primero;
-}
-
-static
-void clasificarMovimiento(tVuelo primero, char aterrizaje){
-	if(aterrizaje)
-		primero->aterrizaje++;
-	else
-		primero->despegue++;
-
-	return;
 }
 
 void freeAeropuerto(aeropuertoADT a){
