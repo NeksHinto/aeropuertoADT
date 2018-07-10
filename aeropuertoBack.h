@@ -1,7 +1,10 @@
 #ifndef	_AEROPUERTOBACK_H_
 #define	_AEROPUERTOBACK_H_
 
-typedef struct aeropuertoCDT * aeropuertoADT;
+#define	OACI_MAX	5
+#define	LOCAL_MAX	4
+#define	IATA_MAX	4
+#define	DIAS_MAX	8
 
 typedef struct vuelo{
 	char OACI[OACI_MAX]; //Código OACI del aeropuerto secundario (con el que se relaciona el principal, importado de eana1401_1802.csv)
@@ -27,7 +30,23 @@ typedef struct{
 	tMovimiento movimientos;
 }tAeropuerto;
 
-aeropuertoADT nuevoRegistroAero()
+typedef struct nodo{
+	tAeropuerto aeropuerto;
+	struct nodo * sig;
+}tNodo;
+
+typedef tNodo * tLista;
+
+struct aeropuertoCDT{
+	tLista primero;
+	tLista iter; //Para recorrer la lista de aeropuertos
+	unsigned long int vuelosSemanal[DIAS_MAX];
+};
+
+typedef struct aeropuertoCDT * aeropuertoADT;
+
+/*Crea una estructura que dará soporte al almacenamiento de aeropuertos y sus respectivos movimientos*/
+aeropuertoADT nuevoRegistroAero();
 
 /*Agrega un nuevo aeropuerto a la lista. 
 **Si ya existía el aeropuerto, no hace nada.
@@ -73,7 +92,7 @@ int fechaADia(char * fecha, int * fueraDeRango, int anio);
 int registrarMovDia(aeropuertoADT a, int dia);
 
 /*Si se trata de un aeropuerto desconocido, lo pisa con "####"*/
-void esDesconocido(char OACI[5]);
+void esDesconocido(char OACI[]);
 
 /*Reinicia el puntero al inicio de la línea y lo mueve hasta el token (columna) n*/
 char * moverPtrColN(char * s, int n);
