@@ -248,14 +248,14 @@ int movimientosInternacionales( aeropuertoADT a, FILE * archivoP){
 
 /*QUERY3*/
 static
-int vuelosPorDia(aeropuertoADT * a, FILE * archivoP){
-	fprintf(archivoP, "LUNES: %d\n", a.vuelosSemanal[LUN]);
-	fprintf(archivoP, "MARTES: %d\n", a.vuelosSemanal[MAR]);
-	fprintf(archivoP, "MIERCOLES: %d\n", a.vuelosSemanal[MIER]);
-	fprintf(archivoP, "JUEVES: %d\n", a.vuelosSemanal[JUE]);
-	fprintf(archivoP, "VIERNES: %d\n", a.vuelosSemanal[VIE]);
-	fprintf(archivoP, "SABADO: %d\n", a.vuelosSemanal[SAB]);
-	fprintf(archivoP, "DOMINGO: %d\n", a.vuelosSemanal[DOM]);
+int vuelosPorDia(aeropuertoADT  a, FILE * archivoP){
+	fprintf(archivoP, "LUNES: %d\n", a->vuelosSemanal[LUN]);
+	fprintf(archivoP, "MARTES: %d\n", a->vuelosSemanal[MAR]);
+	fprintf(archivoP, "MIERCOLES: %d\n", a->vuelosSemanal[MIER]);
+	fprintf(archivoP, "JUEVES: %d\n", a->vuelosSemanal[JUE]);
+	fprintf(archivoP, "VIERNES: %d\n", a->vuelosSemanal[VIE]);
+	fprintf(archivoP, "SABADO: %d\n", a->vuelosSemanal[SAB]);
+	fprintf(archivoP, "DOMINGO: %d\n", a->vuelosSemanal[DOM]);
 	fclose(archivoP);//cerramos el stream
 	return EXIT_OK;
 }
@@ -284,6 +284,7 @@ int detallesVuelo(aeropuertoADT a, FILE *archivoP){
 
 int crearArchivos(aeropuertoADT a, char * pathQuery1, char * pathQuery2, char * pathQuery3, char * pathQuery4){
 	//Creamos los archivos
+	int error1, error2, error3, error4;
 	FILE * archQ1;
 	archQ1 = fopen(pathQuery1, "w");
 	FILE * archQ2;
@@ -293,10 +294,13 @@ int crearArchivos(aeropuertoADT a, char * pathQuery1, char * pathQuery2, char * 
 	FILE * archQ4;
 	archQ4 = fopen(pathQuery4, "w");
 	//Copiamos los datos del TAD
-	movimientosAeropuerto(aeropuertoADT a, archQ1);
-	movimientosInternacionales(aeropuertoADT a, archQ2);
-	vuelosPorDia(aeropuertoADT a, archQ3);
-	detalleVuelos(aeropuertoADT a, archQ4);
+	error1=movimientosAeropuerto(a, archQ1);
+	error2=movimientosInternacionales(a, archQ2);
+	error3=vuelosPorDia(a, archQ3);
+	error4=detalleVuelos(a, archQ4);
+
+	if((error1)||(error2)||(error3)||(error4))
+		return EXIT_ERR;
 
 	return EXIT_OK;
 }
