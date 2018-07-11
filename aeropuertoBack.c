@@ -62,63 +62,71 @@ int agregarAeropuerto(aeropuertoADT a, char OACI[], char codigoLocal[], char IAT
 	return exito;
 }
 
+
+
 static
-void clasificarMovimiento(tVuelo primero, char aterrizaje){
+void clasificarMovimiento(tVuelo * primero, char aterrizaje){
 	if(aterrizaje)
-		primero.aterrizajes++;
+		primero->aterrizajes++;
 	else
-		primero.despegues++;
+		primero->despegues++;
 
 	return;
 }
 
-static
-tVuelo agregarMovimientoRec(tVuelo primero, char OACISec[], char clasificacion, int * exito, char aterrizaje){
-	int c;
-	if(primero==NULL || (c=strcmp(OACISec, primero.OACI)) < 0 ){
-		void * aux = malloc(sizeof(tVuelo));
-		if(aux!=NULL){
-			tVuelo new = aux;
-			strcpy(new.OACI, OACISec);
-			new.clasificacion=(clasificacion=="Internacional"?1:0); //Si es 0 es porque es un vuelo de cabotaje
-			clasificarMovimiento(primero, aterrizaje);
-		}
-		*exito=1;
 
-		return new;
+static
+tVuelo * agregarMovimientoRec(tVuelo * primero, char OACISec[], char clasificacion, int * exito, char aterrizaje){
+	int c;
+
+
+	if(primero==NULL || (c=strcmp(OACISec, primero->OACI)) < 0 ){
+		tVuelo * aux = malloc(sizeof(tVuelo));
+		if(aux!=NULL){
+			tVuelo * new = aux;
+			strcpy(new->OACI, OACISec);
+			new->clasificacion = clasificacion; //Si es 0 es porque es un vuelo de cabotaje
+			clasificarMovimiento(primero, aterrizaje);
+			*exito=1;
+
+			return new;
+		}
+		return aux;
 	}
+
 	if(c==0){
 		clasificarMovimiento(primero, aterrizaje);
 		*exito=1;
-
 		return primero;
 	}
-	primero->sig=agregarMovimientoRec(primero, aterrizaje);
 
+	primero->sig=agregarMovimientoRec(primero, OACISec, clasificacion, exito, aterrizaje);
 	return primero;
 }
-
 /*Agrega un movimiento al aeropuerto local pasado como parámetro.
 **Pensado para utilizar post-agregar un aeropuerto.
 **Incrementa totalAterrizajes o totalDespegues.
 **El flag se define en el main, leyendo el archivo:
 **Si se trata de un aterrizaje, aterrizaje = 1, sino aterrizaje = 0.*/
-int agregarMovimiento(aeropuertoADT a, char OACILocal[], char OACISec[], char clasificacion, char flag){
+int agregarMovimiento(aeropuertoADT a, char OACILocal[], char OACISec[], char clasificacion, char aterrizaje){
 	int exito=0;
-	recorrerAeropuertos(a);
-	while(strcmp(OACILocal, a->iter->OACI)!=0 && haySigAeropuerto(a)){
+	recorrerAeropuertos(a);//inicializa el iter de la lista de movimientos 
+
+	/*verifico que el aeropuerto principal no sea el mismo que el apuntado por el iter principal*/
+	while(strcmp(OACILocal, a->iter->aeropuerto.OACI)!=0 && haySigAeropuerto(a)){
 		a->iter = sigAeropuerto(a);
 	}
-	if(flag)
-		a->iter->totalAterrizajes++;
-	else
-		a->iter->totalDespegues++;
 
-	a->iter->aeropuerto.movimientos->vuelos=agregarMovimientoRec(a->iter->aeropuerto.movimientos->vuelos, OACISec, clasificacion, &exito, char aterrizaje);
+	//Aterrizaje==1, Despegue==0
+	if(aterrizaje)
+		a->iter->aeropuerto.movimientos.totalAterrizajes++;
+	else
+		a->iter->aeropuerto.movimientos.totalDespegues++;
+
+	a->iter->aeropuerto.movimientos.vuelos=agregarMovimientoRec(a->iter->aeropuerto.movimientos.vuelos, OACISec, clasificacion, &exito, aterrizaje);
 
 	return exito;
 }
-
 void freeAeropuerto(aeropuertoADT a){
 	freeAeropuertoRec(a->primero);
 	for(int i=0; i<DIAS_MAX; i++){
