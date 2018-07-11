@@ -12,7 +12,7 @@ README.txt (este archivo)
 ---------------------
 Generar el ejecutable
 ---------------------
-gcc aeropuertoBack.c aeropuertoFront.c aeropuertoMAIN.c -o aeropuertoRegistros -Wall -pedantic -std=c99 -fsanitize=address
+gcc aeropuertoBack.c aeropuertoFront.c aeropuertoMAIN.c -o aeropuertoRegistros -Wall -pedantic -std=c99 -fsanitize=address -lm
 
 --------
 Ejecutar
