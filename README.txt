@@ -24,8 +24,8 @@ Ejecutar
 Diseño y comentarios
 --------------------
 1. Diseño
-Lista de listas (Falta completar)
+Lista de listas 
 Eficiencia
 
 2. Estilo
-Front vs Back (Falta completar)
+Front vs Back 
