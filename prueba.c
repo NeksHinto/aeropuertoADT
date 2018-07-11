@@ -98,9 +98,7 @@ aeropuertoADT nuevoRegistroAero(){
 		}
 	}
 	return a;
-}//CHECKED
-
-static 
+}//CHECKEDstatic 
 tLista agregarAeropuertoRec(tLista primero, char OACI[], char codigoLocal[], char IATA[], char * descripcion, char trafico, int * exito){
 	int c;
 	if(primero==NULL || (c=strcmp(OACI, primero->aeropuerto.OACI)) < 0){
