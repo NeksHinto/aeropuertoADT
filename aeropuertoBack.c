@@ -1,10 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "aeropuertoBack.h"
 
 #define	DELIM_FECHA 	"/"
+#define	DELIM_TOKEN		";"
 #define	RECORRE_FECHA	strtok(NULL, DELIM_TOKEN)
+#define	RECORRE_TOKENS	strtok(NULL, DELIM_TOKEN)
+#define TOKENS_VUELOS	7
 
 #define EXIT_OK		1
 #define	EXIT_ERR	0
@@ -12,7 +16,6 @@
 enum DIAS {LUN=0, MAR, MIER, JUE, VIE, SAB, DOM};
 enum ERRORES {ERR_AERO=1, ERR_MOV, ERR_FECHA, ERR_DIA, ERR_OACI};
 
-/*Crea una estructura que dará soporte al almacenamiento de aeropuertos y sus respectivos movimientos.*/
 aeropuertoADT nuevoRegistroAero(){
 	aeropuertoADT a = malloc(sizeof(struct aeropuertoCDT));
 	if(a!=NULL){
@@ -23,6 +26,42 @@ aeropuertoADT nuevoRegistroAero(){
 		}
 	}
 	return a;
+}
+
+void recorrerAeropuertos(aeropuertoADT a){
+	a->iter = a->primero;
+	return;
+}
+
+void recorrerMovsAeropuerto(tLista primero){
+	primero->aeropuerto.movimientos.iter = primero->aeropuerto.movimientos.vuelos; 
+	return;
+}
+
+int haySigAeropuerto(aeropuertoADT a){
+	return a->iter!=NULL;
+}
+
+int haySigMovimiento(tLista primero){	
+	return primero->aeropuerto.movimientos.iter!=NULL;
+}
+
+tLista sigAeropuerto(aeropuertoADT a){
+	tLista aux = NULL;
+	if(haySigAeropuerto(a)){
+		aux = a->iter;
+		a->iter = a->iter->sig;
+	}
+	return aux;
+}
+
+tVuelo * sigMovimiento(tLista primero){
+	tVuelo * aux = NULL;
+	if(haySigMovimiento(primero)){
+		aux = primero->aeropuerto.movimientos.iter;
+		primero->aeropuerto.movimientos.iter = primero->aeropuerto.movimientos.iter->sig;
+	}
+	return aux;
 }
 
 static 
@@ -42,12 +81,14 @@ tLista agregarAeropuertoRec(tLista primero, char OACI[], char codigoLocal[], cha
 				new->aeropuerto.movimientos.totalDespegues=0;
 				new->aeropuerto.movimientos.totalAterrizajes=0;
 				new->aeropuerto.movimientos.vuelos=calloc(1, sizeof(tVuelo));
-				
+
+				*exito=1;
+
 				return new;
 			}
 		}
 	}
-	primero->sig=agregarAeropuertoRec(primero->sig, OACI, codigoLocal, IATA, descripcion, trafico, &exito);
+	primero->sig=agregarAeropuertoRec(primero->sig, OACI, codigoLocal, IATA, descripcion, trafico, exito);
 
 	return primero;
 }
@@ -62,8 +103,6 @@ int agregarAeropuerto(aeropuertoADT a, char OACI[], char codigoLocal[], char IAT
 	return exito;
 }
 
-
-
 static
 void clasificarMovimiento(tVuelo * primero, char aterrizaje){
 	if(aterrizaje)
@@ -74,50 +113,40 @@ void clasificarMovimiento(tVuelo * primero, char aterrizaje){
 	return;
 }
 
-
 static
 tVuelo * agregarMovimientoRec(tVuelo * primero, char OACISec[], char clasificacion, int * exito, char aterrizaje){
 	int c;
-
-
-	if(primero==NULL || (c=strcmp(OACISec, primero->OACI)) < 0 ){
-		tVuelo * aux = malloc(sizeof(tVuelo));
+	if( primero==NULL || (c=strcmp(OACISec, primero->OACISec)) < 0 ){
+		tVuelo * aux = malloc(sizeof(*aux));
 		if(aux!=NULL){
 			tVuelo * new = aux;
-			strcpy(new->OACI, OACISec);
-			new->clasificacion = clasificacion; //Si es 0 es porque es un vuelo de cabotaje
-			clasificarMovimiento(primero, aterrizaje);
+			strcpy(new->OACISec, OACISec);
+			new->clasificacion=clasificacion; //Si es 0 es porque es un vuelo de cabotaje
+			new->aterrizajes=0;
+			new->despegues=0;
+			clasificarMovimiento(new, aterrizaje);
 			*exito=1;
-
 			return new;
 		}
 		return aux;
 	}
-
 	if(c==0){
 		clasificarMovimiento(primero, aterrizaje);
 		*exito=1;
+
 		return primero;
 	}
+	primero->sig=agregarMovimientoRec(primero->sig, OACISec, clasificacion, exito, aterrizaje);
 
-	primero->sig=agregarMovimientoRec(primero, OACISec, clasificacion, exito, aterrizaje);
 	return primero;
 }
-/*Agrega un movimiento al aeropuerto local pasado como parámetro.
-**Pensado para utilizar post-agregar un aeropuerto.
-**Incrementa totalAterrizajes o totalDespegues.
-**El flag se define en el main, leyendo el archivo:
-**Si se trata de un aterrizaje, aterrizaje = 1, sino aterrizaje = 0.*/
+
 int agregarMovimiento(aeropuertoADT a, char OACILocal[], char OACISec[], char clasificacion, char aterrizaje){
 	int exito=0;
-	recorrerAeropuertos(a);//inicializa el iter de la lista de movimientos 
-
-	/*verifico que el aeropuerto principal no sea el mismo que el apuntado por el iter principal*/
+	recorrerAeropuertos(a);
 	while(strcmp(OACILocal, a->iter->aeropuerto.OACI)!=0 && haySigAeropuerto(a)){
 		a->iter = sigAeropuerto(a);
 	}
-
-	//Aterrizaje==1, Despegue==0
 	if(aterrizaje)
 		a->iter->aeropuerto.movimientos.totalAterrizajes++;
 	else
@@ -127,75 +156,7 @@ int agregarMovimiento(aeropuertoADT a, char OACILocal[], char OACISec[], char cl
 
 	return exito;
 }
-void freeAeropuerto(aeropuertoADT a){
-	freeAeropuertoRec(a->primero);
-	for(int i=0; i<DIAS_MAX; i++){
-		if(a->vuelosSemanal[i]!=NULL)
-			free(a->vuelosSemanal[i]);
-	}
-	free(a->vuelosSemanal);
-	free(a);
 
-	return;
-}
-
-static
-void freeAeropuertoRec(tLista primero){
-	if(primero==NULL)
-		return;
-	freeVuelosRec(primero->sig);
-	free(primero->trafico);
-	free(primero);
-	return;
-}
-
-static
-void freeVuelosRec(tVuelo * vuelos){
-	if(vuelos==NULL)
-		return;
-	freeVuelosRec(vuelos->sig);
-	free(vuelos);
-	return;
-}
-
-
-void recorrerAeropuertos(aeropuertoADT a){
-	a->iter = a->primero;
-	return;
-}
-
-void recorrerMovsAeropuerto(tLista aeropuerto){
-	aeropuerto->movimientos->iter = aeropuerto->movimientos->vuelos;//cambiar nombre de vuelos que esta en la struct tmovimiento para primero(mas claro)  
-	return;
-}
-
-int haySigAeropuerto(aeropuertoADT a){
-	return a->iter!=NULL;
-}
-
-int haySigMovimiento(tLista aeropuerto){	
-	return aeropuerto->movimientos->iter!=NULL;
-}
-
-tAeropuerto* sigAeropuerto(aeropuertoADT a){
-	
-	tAeropuerto* aux;
-	aux= a->iter->aeropuerto;
-	a->iter = a->iter->sig;
-	
-	return aux;
-}
-
-tVuelo * sigMovimiento(tLista aeropuerto){
-	tVuelo * aux;
-	aux = aeropuerto->movimientos->iter;
-	aeropuerto->movimientos->iter = aeropuerto->movimientos->iter->sig;
-	
-	return aux;
-}
-
-/*Devuelve la posición en el vector que coincide con el día de la semana correspondiente
-**a la fecha pasada como parámetro*/
 int fechaADia(char * fecha, int * fueraDeRango, int anio){
 	int d = atoi(strtok(fecha, DELIM_FECHA));
 	int m = atoi(RECORRE_FECHA);
@@ -207,10 +168,11 @@ int fechaADia(char * fecha, int * fueraDeRango, int anio){
 	int dia = (d+=m<3?a--:a-2,23*m/9+d+4+4/a-a/100+a/400)%7;
 
 	return dia-1;
-}//CHECKED
+}
 
 int registrarMovDia(aeropuertoADT a, int dia){
-	switch(dia){
+	enum DIAS d = dia;
+	switch(d){
 		case LUN: a->vuelosSemanal[LUN-1]++;break;
 		case MAR: a->vuelosSemanal[MAR-1]++;break;
 		case MIER: a->vuelosSemanal[MIER-1]++;break;
@@ -223,8 +185,7 @@ int registrarMovDia(aeropuertoADT a, int dia){
 	return EXIT_OK;
 }
 
-/*Si se trata de un aeropuerto desconocido, lo pisa con "####"*/
-void esDesconocido(char OACI[5]){
+void esDesconocido(char OACI[]){
 	int i;
 	for(i=2; OACI[i]!=0 && isalpha(OACI[i]); i++)
 		;
@@ -232,12 +193,10 @@ void esDesconocido(char OACI[5]){
 		strcpy(OACI, "####");
 	printf("%d\n", i);
 	return;
-}//CHECKED
+}
 
-///////////////////////////////////////////////
-/*QUERY 1*/
-///////////////////////////////////////////////
-///////////////////////////////////////////////
+/*QUERY1*/
+static
 int movimientosAeropuerto(aeropuertoADT a, FILE *archivoP){
     tAeropuerto* aeroLocal; //este puntero es para que reciba la direccion que retorna la funcion next (del aeropuerto local siguiente de la lista)
     recorrerAeropuertos(a);//El iterador apunta al primer nodo de la lista
@@ -247,17 +206,15 @@ int movimientosAeropuerto(aeropuertoADT a, FILE *archivoP){
 
     	/*Asumo que solo hay aeropuertos con movimientos en la lista, por lo tanto no verifico que tenga 
     	movimientos o no, los guardo directamente hasta completar el final de la lista de aeropuertos*/
-    	fprintf(archivoP, "%s;%s;%s;%d\n", aeroLocal.OACI, aeroLocal.codigoLocal, aeroLocal.descripcion, (aeroLocal.movimientos.totalDespegues+aeroLocal.movimientos.totalAterrizajes));
+    	fprintf(archivoP, "%s;%s;%s;%d\n", aeroLocal->OACI, aeroLocal->codigoLocal, aeroLocal->descripcion, (aeroLocal->movimientos.totalDespegues+aeroLocal->movimientos.totalAterrizajes));
     }while(haySigAeropuerto(a));
     fclose(archivoP);
     return EXIT_OK;	
 }
 
 
-///////////////////////////////////////////////
-/*QUERY 2*/
-///////////////////////////////////////////////
-///////////////////////////////////////////////
+/*QUERY2*/
+static
 int movimientosInternacionales( aeropuertoADT a, FILE * archivoP){
 	int at, desp;
 	recorrerAeropuertos(a);
@@ -279,7 +236,7 @@ int movimientosInternacionales( aeropuertoADT a, FILE * archivoP){
 
      			//verificamos que el aeropuerto DESTINO sea internacional
      			if(vueloP->clasificacion==1){
-     				fprintf(archivoP,"%s;%s;%d;%d;%d\n", aeroP.OACI, aeroP.IATA, desp=vueloP.aterrizaje, at=vueloP.despegues,desp+at );
+     				fprintf(archivoP,"%s;%s;%d;%d;%d\n", aeroP->OACI, aeroP->IATA, desp=vueloP->aterrizajes, at=vueloP->despegues,desp+at );
      			}
      		}while(haySigMovimiento(a->iter));
 		}
@@ -289,11 +246,9 @@ int movimientosInternacionales( aeropuertoADT a, FILE * archivoP){
 }
 
 
-///////////////////////////////////////////////
-/*QUERY 3*/
-///////////////////////////////////////////////
-///////////////////////////////////////////////
-int vuelosPorDía(aeropuertoADT * a, FILE * archivoP){
+/*QUERY3*/
+static
+int vuelosPorDia(aeropuertoADT * a, FILE * archivoP){
 	fprintf(archivoP, "LUNES: %d\n", a.vuelosSemanal[LUN]);
 	fprintf(archivoP, "MARTES: %d\n", a.vuelosSemanal[MAR]);
 	fprintf(archivoP, "MIERCOLES: %d\n", a.vuelosSemanal[MIER]);
@@ -306,14 +261,12 @@ int vuelosPorDía(aeropuertoADT * a, FILE * archivoP){
 }
 
 
-///////////////////////////////////////////////
-/*QUERY 4*/
-///////////////////////////////////////////////
-///////////////////////////////////////////////
+/*QUERY4*/
+static
 int detallesVuelo(aeropuertoADT a, FILE *archivoP){
 	recorrerAeropuertos(a);
 	recorrerMovsAeropuerto(a->iter);
-	tAeropuerto *aeroP;//para recorrer lista de aeropuertos principales
+	tLista aeroP;//para recorrer lista de aeropuertos principales
 	tVuelo * vueloP;//para recorrer lista de movimientos de cada aeropuerto principal
 
 
@@ -322,58 +275,30 @@ int detallesVuelo(aeropuertoADT a, FILE *archivoP){
 		/*todos los aeropuertos tienen movimiento, no hace falta verificar*/
 		do{
 			vueloP=sigMovimiento(a->iter);
-			fprintf(archivoP, "%s;%s;%d;%d\n", aeroP.OACI, vueloP.OACI, vueloP.aterrizajes, vueloP.despegues);
+			fprintf(archivoP, "%s;%s;%d;%d\n", aeroP->aeropuerto.OACI, vueloP->OACISec, vueloP->aterrizajes, vueloP->despegues);
 		}while(haySigMovimiento(a->iter));
-	}while(haySigAeropuerto(a->iter));
+	}while(haySigAeropuerto(a));
 	fclose(archivoP);
 	return EXIT_OK;
 }
 
-//FUNCIÓN PRINCIPAL QUE JUNTA TODAS LAS QUERIES
 int crearArchivos(aeropuertoADT a, char * pathQuery1, char * pathQuery2, char * pathQuery3, char * pathQuery4){
 	//Creamos los archivos
 	FILE * archQ1;
-	archQ1 = fopen("movs_aeropuerto.csv", "w"); //crea un archivo nombre "movs_aeropuerto(...)" y recibe un string "w" que permite que se escriba en el archivo creado
+	archQ1 = fopen(pathQuery1, "w");
 	FILE * archQ2;
-	archQ2 = fopen("movs_internacional.csv", "w");
+	archQ2 = fopen(pathQuery2, "w");
 	FILE * archQ3;
-	archQ3 = fopen("semanal.csv", "w");
+	archQ3 = fopen(pathQuery3, "w");
 	FILE * archQ4;
-	archQ4 = fopen("aerop_detalle.csv", "w");
+	archQ4 = fopen(pathQuery4, "w");
 	//Copiamos los datos del TAD
 	movimientosAeropuerto(aeropuertoADT a, archQ1);
 	movimientosInternacionales(aeropuertoADT a, archQ2);
-	vuelosPorDía(aeropuertoADT a, archQ3);
+	vuelosPorDia(aeropuertoADT a, archQ3);
 	detalleVuelos(aeropuertoADT a, archQ4);
 
 	return EXIT_OK;
-}
-
-/*Reinicia el puntero al inicio de la línea y lo mueve hasta el token (columna) n*/
-char * moverPtrColN(char * s, int n)
-{
-	int i=0;
-	char * aux = strtok(s, DELIM_TOKEN);
-	while(i<n){
-		aux = RECORRE_TOKENS;
-		i++;
-	}
-	return aux;
-}//CHECKED
-
-/*Valida si no es N/A*/
-char * esLineaValida(char * linea){
-	char * auxClasif = moverPtrColN(linea, CLASIFICACION);
-	char * auxOrig = moverPtrColN(linea, OACI_ORIG);
-	char * auxDest = moverPtrColN(linea, OACI_DEST);
-	while(esNA(auxClasif) && esNA(auxOrig) && esNA(auxDest)){
-		char c;
-		SALTEA_LINEA(c, auxClasif);
-		auxClasif = moverPtrColN(auxClasif, CLASIFICACION);
-		auxOrig = moverPtrColN(auxClasif, OACI_ORIG);
-		auxDest = moverPtrColN(auxClasif, OACI_DEST);
-	}
-	return auxClasif;
 }
 
 void validaArchivo(FILE * archivo)
@@ -384,27 +309,61 @@ void validaArchivo(FILE * archivo)
 		return EXIT_ERR;
 	}
 	return;
-}//CHECKED
+}
 
 static
 char * strError(int tipoError)
 {
-	switch(tipoError)
+	enum ERRORES error = tipoError;
+	switch(error)
 	{
 		case ERR_AERO:	return "No se pudo agregar el aeropuerto.\n"; break;
 		case ERR_MOV: 	return "No se pudo agregar el movimiento.\n"; break;
 		case ERR_FECHA: return "No se pudo registrar el día de la fecha pasada como parámetro.\n"; break;
 		case ERR_DIA: 	return "No se pudo registrar el movimiento en el día correspondiente.\n"; break;
 		case ERR_OACI:	return "No se encontró el OACI.\n"; break;
+		case ERR_ARCH:	return "No hay espacio suficiente para crear los archivos.\n"; break;
+		default: 		return "Error.\n"; break;
 	}
 }
 
 void validaFlag(int flag, int tipoError)
 {
 	if(!flag){
-		char * strError=strError(strError, tipoError);
-		fprintf(stderr, "%s\n", strError);
-		return EXIT_ERR;
+		char * error=strError(tipoError);
+		fprintf(stderr, "%s\n", error);
 	}
 	return;
+}
+
+/*Retorna 1 si debe saltear la línea, 0 sino*/
+int validaLinea(char * linea){
+	char * aux;
+	int cont = TOKENS_VUELOS;
+	int saltar = 0;
+	while(cont>0 && !saltar){
+		__strtok_r(linea, DELIM_TOKEN, &aux);
+		if(esNA(linea))
+			saltar = 1;	
+		strcpy(linea, aux);	
+		cont--;
+	}
+	return saltar;
+}
+
+char * retornaToken(char * linea, int col){
+	char * aux;
+	char * originalStr = malloc(CHAR_MAX);
+	strcpy(originalStr, linea);
+	printf("%s\n", originalStr);
+	while(col>0){
+		__strtok_r(originalStr, DELIM_TOKEN, &aux);
+		printf("%s\n", originalStr);
+		printf("%s\n", aux);
+		strcpy(originalStr, aux);	
+		col--;
+	}
+	originalStr = strtok(originalStr, DELIM_TOKEN);
+	printf("%s\n", originalStr);
+	return originalStr;
 }

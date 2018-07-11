@@ -3,24 +3,25 @@
 #include <stdlib.h>
 #include "aeropuertoBack.h"
 
-#define	DELIM_TOKEN			";"
 #define	SALTEA_LINEA(a) 	while(getc(a)!='\n')
-#define	CHAR_MAX			100
 
-enum COLS_VUELOS {FECHA=0, HORA, CLASE, CLASIFICACION, TIPO_MOV, OACI_ORIG, OACI_DEST, AEROLINEA, AERONAVE, AERO_APC};
-enum AEROPUERTOS {LOCAL=0, OACI, IATA, TIPO, DENOM, COORD, LATITUD, LONGITUD, ELEV, UOM, REF, DIST, DIRECC, COND, CONTROL, REG, FIR, USO, TRAFICO, SNA, CONCESIONADO, PROV, INHAB};
+#define	COD_LOCAL	0
+#define COD_OACI	1
+#define	COD_IATA	2
+#define	DENOM		4
+#define	TRAFICO 	18
 
+#define	OACI_MAX	5
+#define	LOCAL_MAX	4
+#define	IATA_MAX	4
+#define	CHAR_MAX	100
 
 char * leerLinea(char linea[], FILE * archivo){
-	//Salteamos la primer linea (Encabezados de las columnas)
-	SALTEA_LINEA(archivo); //Devuelve el siguiente char y avanza la posición del puntero al archivo
-	//Copiamos la línea	
+	SALTEA_LINEA(archivo); 
 	linea = fgets(linea, CHAR_MAX, archivo);
-
 	return linea;
-}//CHECKED
+}
 
-/*Lee del archivo "aeropuertos_detalle.csv" y copia los datos correspondientes en las variables pasadas como parámetro*/
 void datosAeropuerto(char OACI[OACI_MAX], char codigoLocal[LOCAL_MAX], char IATA[IATA_MAX], char * descripcion, char trafico){
 	FILE * archivoAero;
 	archivoAero = fopen("./aeropuertos_detalle.csv", "r");

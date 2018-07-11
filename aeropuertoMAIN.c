@@ -12,11 +12,15 @@
 #define	BOOLEAN_TOKEN(s)	((RECORRE_TOKENS==(s))?1:0)
 #define	esNA(s)				(strcmp(s, "N/A")==0)
 #define	FECHA_MAX			9
+#define	CHAR_MAX			100
+
+enum ERRORES {ERR_AERO=1, ERR_MOV, ERR_FECHA, ERR_DIA, ERR_OACI};
 
 
 int main(int argc, char *argv[])
 {
 	if(argc==2 && RANGO(argv[1])){
+		int flag;
 		aeropuertoADT registro = nuevoRegistroAero();
 		FILE * archivoVuelos;
 		archivoVuelos = fopen("./eana1401-1802.csv", "r");
@@ -36,11 +40,10 @@ int main(int argc, char *argv[])
 				int dia = fechaADia(fecha, &fueraDeAnio, argv[1]);
 				validaFlag(dia, ERR_DIA);
 				if(!fueraDeAnio){
-					int flag = registraMovDia(registro, dia);
+					flag = registraMovDia(registro, dia);
 					validaFlag(flag, ERR_DIA);
 					char clasificacion = (strcmp(retornaToken(lineaVuelos, CLASIFICACION), "Cabotaje"))==0?0:1;
 					int aterrizaje = (strcmp(retornaToken(lineaVuelos, TIPO_MOV), "Despegue"))==0?0:1;
-					//Tres pos: 1 local y el otro no, viceversa, o ambos locales (vuelos de cabotaje)
 					if(!aterrizaje){
 						strcpy(OACILocal, retornaToken(lineaVuelos, OACI_ORIG));
 						strcpy(OACIAnon, retornaToken(lineaVuelos, OACI_DEST));
@@ -73,6 +76,9 @@ int main(int argc, char *argv[])
 				lineaVuelos=fgets(lineaVuelos, CHAR_MAX, archivoVuelos);
 			}while(!feof(archivoVuelos));
 			fclose(archivoVuelos);
+
+			flag = creaArchivos(registro, "movs_aeropuerto.csv", "movs_internacional.csv", "semanal.csv", "aerop_detalle.csv");
+			validaFlag(flag, ERR_ARCH);
 		}	
 		return 0;
 	}

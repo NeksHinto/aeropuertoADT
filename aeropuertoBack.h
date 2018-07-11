@@ -7,7 +7,7 @@
 #define	DIAS_MAX	8
 
 typedef struct vuelo{
-	char OACI[OACI_MAX]; //Código OACI del aeropuerto secundario (con el que se relaciona el principal, importado de eana1401_1802.csv)
+	char OACISec[OACI_MAX]; //Código OACI del aeropuerto secundario (con el que se relaciona el principal, importado de eana1401_1802.csv)
 	char clasificacion; //Flag: 1 -> El OACI del nodo corresponde al de un aeropuerto INTERNACIONAL, 0 sino (NACIONAL)
 	unsigned int aterrizajes; //Origen: aeropuerto principal
 	unsigned int despegues; //Origen: aeropuerto secundario
@@ -83,7 +83,7 @@ void recorrerMovsAeropuerto(tLista aeropuerto);
 int haySigAeropuerto(aeropuertoADT a);
 int haySigMovimiento(tLista aeropuerto);	
 tLista sigAeropuerto(aeropuertoADT a);
-tVuelo sigMovimiento(tLista aeropuerto);
+tVuelo * sigMovimiento(tLista aeropuerto);
 
 /*Devuelve la posición en el vector que coincide con el día de la semana correspondiente
 **a la fecha pasada como parámetro*/
@@ -94,19 +94,18 @@ int registrarMovDia(aeropuertoADT a, int dia);
 /*Si se trata de un aeropuerto desconocido, lo pisa con "####"*/
 void esDesconocido(char OACI[]);
 
-/*Reinicia el puntero al inicio de la línea y lo mueve hasta el token (columna) n*/
-char * moverPtrColN(char * s, int n);
-
-/*Valida si el token no es N/A*/
-char * esLineaValida(char * linea);
+/*Retorna token posicionado en la columna col de la línea pasada como parámetro*/
+char * retornaToken(char * linea, int col);
 
 /*
-**Funciones de errores
+**Funciones de validación
 **validaArchivo() retorna mensaje de error si el puntero al stream es NULL, sino no hace nada.
 **validaFlag() retorna mensaje de error correspondiente al tipo de error pasado como parámetro, sino no hace nada.
+**validaLinea() retorna 1 si debe saltearse la línea porque alguno de los campos es N/A, 0 sino
 */
 void validaArchivo(FILE * archivo);
 void validaFlag(int flag, int tipoError);
+int validaLinea(char * linea);
 
 
 #endif
