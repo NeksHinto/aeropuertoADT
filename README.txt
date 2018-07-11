@@ -18,14 +18,4 @@ gcc aeropuertoBack.c aeropuertoFront.c aeropuertoMAIN.c -o aeropuertoRegistros -
 Ejecutar
 --------
 ./aeropuertoRegistros {año entre 2014 y 2018 inclusive}
-
-
---------------------
-Diseño y comentarios
---------------------
-1. Diseño
-Lista de listas 
-Eficiencia
-
-2. Estilo
-Front vs Back 
+ 
